@@ -32,7 +32,7 @@
       v-if="isOpen"
       ref="dropdown"
       class="absolute top-full left-0 z-50 mt-1 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white shadow-lg"
-      :class="showQuickSelection ? 'w-96' : 'w-80'"
+      :class="showQuickSelection ? 'w-md' : 'w-xs'"
     >
       <div class="flex">
         <!-- Quick Selection Sidebar (only for date range picker) -->
@@ -118,7 +118,7 @@
           <!-- Date View -->
           <div v-else class="p-3">
             <!-- Day headers -->
-            <div class="mb-2 grid grid-cols-7 gap-1">
+            <div class="mb-2 grid grid-cols-7 gap-2">
               <div
                 v-for="day in DAY_NAMES"
                 :key="day"
@@ -129,7 +129,7 @@
             </div>
 
             <!-- Date grid -->
-            <div class="grid grid-cols-7 gap-1">
+            <div class="grid grid-cols-7 gap-2">
               <button
                 v-for="dayData in calendarDays"
                 :key="dayData.dateString"
@@ -267,11 +267,13 @@ const props = withDefaults(defineProps<DatePickerProps>(), {
   view: 'date',
   range: false,
   minDate: (() => {
+    // Calculate minimum selectable date: 180 days before today (excluding current date)
     const date = new Date()
-    date.setDate(date.getDate() - 180) // 180 days before current date (excluding current date)
+    date.setDate(date.getDate() - 180)
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
   })(),
   maxDate: (() => {
+    // Maximum selectable date is today
     const date = new Date()
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
   })(),
@@ -360,9 +362,9 @@ const canNavigateNext = computed(() => {
 const displayValue = computed(() => {
   if (isMonthView.value) {
     if (actualMode.value === 'range') {
-      if (selectedRange.value.start && selectedRange.value.end) {
+      if (selectedRange.value?.start && selectedRange.value?.end) {
         return `${formatMonthForDisplay(selectedRange.value.start)} - ${formatMonthForDisplay(selectedRange.value.end)}`
-      } else if (selectedRange.value.start) {
+      } else if (selectedRange.value?.start) {
         return formatMonthForDisplay(selectedRange.value.start)
       }
       return ''
@@ -371,9 +373,9 @@ const displayValue = computed(() => {
     }
   } else {
     if (actualMode.value === 'range') {
-      if (selectedRange.value.start && selectedRange.value.end) {
+      if (selectedRange.value?.start && selectedRange.value?.end) {
         return `${formatDateForDisplay(selectedRange.value.start)} - ${formatDateForDisplay(selectedRange.value.end)}`
-      } else if (selectedRange.value.start) {
+      } else if (selectedRange.value?.start) {
         return formatDateForDisplay(selectedRange.value.start)
       }
       return ''
@@ -460,8 +462,6 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
   yesterday.setDate(today.getDate() - 1)
 
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-  const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-  const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0)
 
   const last30Days = new Date(today)
   last30Days.setDate(today.getDate() - 29)
@@ -489,11 +489,6 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
       key: 'thismonth',
       label: 'This month',
       getValue: () => [formatDate(startOfMonth), formatDate(today)],
-    },
-    {
-      key: 'lastmonth',
-      label: 'Last month',
-      getValue: () => [formatDate(startOfLastMonth), formatDate(endOfLastMonth)],
     },
     {
       key: 'last180days',
@@ -553,7 +548,7 @@ const isMonthSelectable = (year: number, month: number): boolean => {
 }
 
 const isDateInSelectedRange = (date: Date): boolean => {
-  if (actualMode.value !== 'range' || !selectedRange.value.start || !selectedRange.value.end)
+  if (actualMode.value !== 'range' || !selectedRange.value?.start || !selectedRange.value?.end)
     return false
   return date >= selectedRange.value.start && date <= selectedRange.value.end
 }
@@ -561,7 +556,7 @@ const isDateInSelectedRange = (date: Date): boolean => {
 const isRangeStart = (date: Date): boolean => {
   return !!(
     actualMode.value === 'range' &&
-    selectedRange.value.start &&
+    selectedRange.value?.start &&
     isSameDay(date, selectedRange.value.start)
   )
 }
@@ -569,7 +564,7 @@ const isRangeStart = (date: Date): boolean => {
 const isRangeEnd = (date: Date): boolean => {
   return !!(
     actualMode.value === 'range' &&
-    selectedRange.value.end &&
+    selectedRange.value?.end &&
     isSameDay(date, selectedRange.value.end)
   )
 }
@@ -665,10 +660,10 @@ const handleDateClick = (date: Date): void => {
   if (!isDateSelectable(date)) return
 
   if (actualMode.value === 'range') {
-    if (!selectedRange.value.start || (selectedRange.value.start && selectedRange.value.end)) {
+    if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
       selectedRange.value = { start: date, end: null }
       rangeStart.value = date
-    } else if (selectedRange.value.start && !selectedRange.value.end) {
+    } else if (selectedRange.value?.start && !selectedRange.value?.end) {
       if (date >= selectedRange.value.start) {
         selectedRange.value.end = date
         emit('range-selected', { start: selectedRange.value.start, end: selectedRange.value.end })
@@ -696,10 +691,10 @@ const handleMonthClick = (monthData: MonthData): void => {
   const selectedMonth = new Date(displayYear.value, monthData.month, 1)
 
   if (actualMode.value === 'range') {
-    if (!selectedRange.value.start || (selectedRange.value.start && selectedRange.value.end)) {
+    if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
       selectedRange.value = { start: selectedMonth, end: null }
       rangeStart.value = selectedMonth
-    } else if (selectedRange.value.start && !selectedRange.value.end) {
+    } else if (selectedRange.value?.start && !selectedRange.value?.end) {
       if (selectedMonth >= selectedRange.value.start) {
         selectedRange.value.end = selectedMonth
         emit('month-range-selected', {

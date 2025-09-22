@@ -1,53 +1,54 @@
 # Vue.js Custom DatePicker
 
-A comprehensive Vue.js date picker component with advanced features, strict validation, and Tailwind CSS styling.
+A comprehensive Vue.js date picker component with advanced features, strict 180-day validation, and modern Tailwind CSS styling.
 
 ## Features
 
 ### Core Functionality
 
-- **Single Date Selection**: Pick individual dates with 180-day validation
-- **Date Range Selection**: Select date ranges with smart validation
-- **Month Selection**: Single month and month range selection
+- **Single Date Selection**: Pick individual dates with smart validation
+- **Date Range Selection**: Select date ranges with intelligent start/end handling
+- **Month Selection**: Single month and month range selection modes
 - **Quick Selection Sidebar**: Preset date ranges (Today, Yesterday, Last 7/30/90 days)
-- **Auto-close Behavior**: Automatically closes after quick selection
+- **Auto-close Behavior**: Automatically closes after selection completion
 
 ### Validation & Navigation
 
-- **180-Day Range Limit**: Restricts selections to current date + previous 179 days
-- **Smart Month Validation**: Allows current month + previous 5 months only
-- **Strict Navigation Controls**: Prevents navigation to invalid date ranges
-- **Real-time Validation**: Instant feedback on invalid selections
+- **180-Day Range Limit**: Restricts selections to 180 days before today (excluding current date)
+- **Smart Month Validation**: Allows current month plus previous 5 months only
+- **Intelligent Navigation**: Prevents navigation to invalid date ranges with visual feedback
+- **Real-time Validation**: Instant feedback on selectable vs non-selectable dates
 
 ### UI/UX Excellence
 
 - **Tailwind CSS v4**: Modern utility-first styling with custom primary color (#E54993)
-- **Mobile Responsive**: Optimized for all screen sizes
-- **Gradient Backgrounds**: Beautiful visual enhancements
-- **Hover & Focus States**: Interactive feedback throughout
-- **Accessibility**: Proper ARIA labels and keyboard navigation
+- **Mobile Responsive**: Fully optimized for all screen sizes and devices
+- **Enhanced Spacing**: Improved calendar layout with standard spacing (gap-2)
+- **Visual States**: Clear hover, focus, and selection states
+- **Accessibility**: Proper ARIA labels and keyboard navigation support
 
 ### Technical Features
 
-- **TypeScript Support**: Full type safety and IntelliSense
-- **Vue 3 Composition API**: Modern reactive architecture
-- **Embedded Types & Utilities**: Self-contained component with no external dependencies
-- **Clean Architecture**: Production-ready code structure
+- **Vue 3 Composition API**: Modern reactive architecture with TypeScript
+- **Optional Chaining**: Robust error handling throughout the component
+- **Self-contained**: Embedded types and utilities - no external dependencies
+- **Clean Code**: Production-ready with human-readable comments
+- **Timezone Safe**: Local date formatting to prevent timezone-related display issues
 
 ## Quick Start
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start development server
-npm run dev
+pnpm run dev
 
 # Build for production
-npm run build
+pnpm run build
 
 # Run linting
-npm run lint
+pnpm run lint
 ```
 
 ## Usage Examples
@@ -56,32 +57,47 @@ npm run lint
 
 ```vue
 <template>
-  <DatePicker v-model="selectedDate" mode="single" placeholder="Select a date" />
+  <DatePicker
+    v-model="selectedDate"
+    mode="single"
+    placeholder="Select a date"
+    @date-selected="handleDateSelection"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import DatePicker from './components/DatePicker.vue'
 
-const selectedDate = ref<Date | null>(null)
+const selectedDate = ref<string | null>(null)
+
+const handleDateSelection = (date: Date) => {
+  console.log('Selected date:', date)
+}
 </script>
 ```
 
-### Date Range with Quick Selection
+### Date Range with Quick Selection Sidebar
 
 ```vue
 <template>
-  <DatePicker v-model="dateRange" mode="range" placeholder="Select date range" />
+  <DatePicker
+    v-model="dateRange"
+    mode="range"
+    placeholder="Select date range"
+    @range-selected="handleRangeSelection"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import DatePicker from './components/DatePicker.vue'
 
-const dateRange = ref<{ start: Date | null; end: Date | null }>({
-  start: null,
-  end: null,
-})
+const dateRange = ref<[string, string] | null>(null)
+
+const handleRangeSelection = (range: { start: Date; end: Date }) => {
+  console.log('Selected range:', range)
+}
 </script>
 ```
 
@@ -89,14 +105,23 @@ const dateRange = ref<{ start: Date | null; end: Date | null }>({
 
 ```vue
 <template>
-  <DatePicker v-model="selectedMonth" mode="month" placeholder="Select month" />
+  <DatePicker
+    v-model="selectedMonth"
+    mode="month"
+    placeholder="Select month"
+    @month-selected="handleMonthSelection"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import DatePicker from './components/DatePicker.vue'
 
-const selectedMonth = ref<Date | null>(null)
+const selectedMonth = ref<string | null>(null)
+
+const handleMonthSelection = (date: Date) => {
+  console.log('Selected month:', date)
+}
 </script>
 ```
 
@@ -104,17 +129,23 @@ const selectedMonth = ref<Date | null>(null)
 
 ```vue
 <template>
-  <DatePicker v-model="monthRange" mode="month-range" placeholder="Select month range" />
+  <DatePicker
+    v-model="monthRange"
+    mode="month-range"
+    placeholder="Select month range"
+    @month-range-selected="handleMonthRangeSelection"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import DatePicker from './components/DatePicker.vue'
 
-const monthRange = ref<{ start: Date | null; end: Date | null }>({
-  start: null,
-  end: null,
-})
+const monthRange = ref<[string, string] | null>(null)
+
+const handleMonthRangeSelection = (range: { start: Date; end: Date }) => {
+  console.log('Selected month range:', range)
+}
 </script>
 ```
 
@@ -122,18 +153,24 @@ const monthRange = ref<{ start: Date | null; end: Date | null }>({
 
 ### Props
 
-| Prop          | Type                                              | Default         | Description            |
-| ------------- | ------------------------------------------------- | --------------- | ---------------------- |
-| `modelValue`  | `Date \| DateRange \| null`                       | `null`          | The selected date(s)   |
-| `mode`        | `'single' \| 'range' \| 'month' \| 'month-range'` | `'single'`      | Selection mode         |
-| `placeholder` | `string`                                          | `'Select date'` | Input placeholder text |
-| `disabled`    | `boolean`                                         | `false`         | Disable the component  |
+| Prop          | Type                                              | Default         | Description                               |
+| ------------- | ------------------------------------------------- | --------------- | ----------------------------------------- |
+| `modelValue`  | `string \| [string, string] \| null`              | `null`          | The selected date(s) in YYYY-MM-DD format |
+| `mode`        | `'single' \| 'range' \| 'month' \| 'month-range'` | `'single'`      | Selection mode                            |
+| `placeholder` | `string`                                          | `'Select date'` | Input placeholder text                    |
+| `disabled`    | `boolean`                                         | `false`         | Disable the component                     |
+| `minDate`     | `string`                                          | 180 days ago    | Minimum selectable date (YYYY-MM-DD)      |
+| `maxDate`     | `string`                                          | Today           | Maximum selectable date (YYYY-MM-DD)      |
 
 ### Events
 
-| Event               | Payload                     | Description                    |
-| ------------------- | --------------------------- | ------------------------------ |
-| `update:modelValue` | `Date \| DateRange \| null` | Emitted when selection changes |
+| Event                  | Payload                              | Description                       |
+| ---------------------- | ------------------------------------ | --------------------------------- |
+| `update:modelValue`    | `string \| [string, string] \| null` | Emitted when selection changes    |
+| `date-selected`        | `Date`                               | Emitted when single date selected |
+| `range-selected`       | `{ start: Date; end: Date }`         | Emitted when date range selected  |
+| `month-selected`       | `Date`                               | Emitted when month selected       |
+| `month-range-selected` | `{ start: Date; end: Date }`         | Emitted when month range selected |
 
 ### Types
 
@@ -143,6 +180,11 @@ interface DateRange {
   end: Date | null
 }
 
+interface QuickSelectionOption {
+  label: string
+  getValue: () => string | [string, string]
+}
+
 type DatePickerMode = 'single' | 'range' | 'month' | 'month-range'
 ```
 
@@ -150,10 +192,11 @@ type DatePickerMode = 'single' | 'range' | 'month' | 'month-range'
 
 The component uses a custom Tailwind CSS configuration with:
 
-- **Primary Color**: `#E54993` (vibrant pink)
-- **Responsive Design**: Mobile-first approach
-- **Custom Components**: Button variants, form controls, and interactive states
-- **Gradient Backgrounds**: Subtle visual enhancements
+- **Primary Color**: `#E54993` (vibrant pink/magenta)
+- **Enhanced Spacing**: Standard gap-2 spacing for better visual clarity
+- **Responsive Design**: Mobile-first approach with optimized touch targets
+- **Interactive States**: Smooth hover, focus, and active state transitions
+- **Gradient Backgrounds**: Subtle visual enhancements throughout
 
 ### CSS Structure
 
@@ -170,28 +213,29 @@ The component uses a custom Tailwind CSS configuration with:
 
 ### Date Mode (Single & Range)
 
-- **180-Day Limit**: Current date + previous 179 days
+- **180-Day Limit**: Current date + previous 180 days (excluding current date)
 - **No Future Dates**: Cannot select dates beyond today
-- **Smart Range Validation**: End date must be after start date
-- **Invalid Date Handling**: Graceful error handling for invalid inputs
+- **Smart Range Validation**: End date must be after or equal to start date
+- **Timezone Safe**: Local date formatting prevents timezone-related issues
 
 ### Month Mode (Single & Range)
 
-- **6-Month Window**: Current month + previous 5 months
-- **No Future Months**: Cannot select future months
-- **Year Navigation**: Intelligent year navigation based on valid months
+- **6-Month Window**: Current month + previous 5 months only
+- **No Future Months**: Cannot select future months beyond current
+- **Year Navigation**: Intelligent year navigation based on valid month ranges
 
 ## Quick Selection Options
 
 The quick selection sidebar (available in date range mode) includes:
 
-- **Today**: Current date range
+- **Today**: Current date only
 - **Yesterday**: Previous day
-- **Last 7 days**: Past week
-- **Last 30 days**: Past month
-- **Last 90 days**: Past quarter
-- **This Month**: Current month's date range
-- **Last Month**: Previous month's date range
+- **Last 7 days**: Past week including today
+- **Last 30 days**: Past month including today
+- **Last 90 days**: Past quarter including today
+- **This Month**: Current month's full date range
+
+> **Note**: "Last month" option has been removed for cleaner UX
 
 ## Project Structure
 
@@ -199,67 +243,81 @@ The quick selection sidebar (available in date range mode) includes:
 vuejs-custom-datepicker/
 ├── src/
 │   ├── components/
-│   │   └── DatePicker.vue      # Main component (853 lines)
+│   │   └── DatePicker.vue      # Main component (848 lines)
 │   ├── css/
 │   │   └── main.css           # Tailwind configuration
-│   ├── App.vue                # Demo application
+│   ├── App.vue                # Demo application with examples
 │   └── main.ts               # Entry point
 ├── public/
-├── package.json
-├── vite.config.ts
-├── tsconfig.json
-└── README.md
+│   └── favicon.ico
+├── package.json              # pnpm dependencies
+├── vite.config.ts           # Vite configuration
+├── tsconfig.json            # TypeScript configuration
+└── README.md               # This documentation
 ```
 
 ## Development Scripts
 
 ```bash
 # Development
-npm run dev          # Start dev server with hot reload
-npm run build        # Build for production
-npm run preview      # Preview production build
+pnpm run dev          # Start dev server with hot reload
+pnpm run build        # Build for production
+pnpm run preview      # Preview production build
 
 # Code Quality
-npm run lint         # Run ESLint
-npm run lint:fix     # Fix ESLint issues
-npm run type-check   # TypeScript type checking
+pnpm run lint         # Run ESLint
+pnpm run lint:fix     # Fix ESLint issues
+pnpm run type-check   # TypeScript type checking
 
 # Dependencies
-npm install          # Install dependencies
-npm update          # Update dependencies
+pnpm install          # Install dependencies
+pnpm update          # Update dependencies
 ```
 
-## Testing & Quality
+## Testing & Quality Assurance
 
-- **Zero Lint Errors**: Clean codebase with consistent formatting
-- **TypeScript Strict Mode**: Full type safety
-- **Production Ready**: Optimized build with tree-shaking
-- **Performance**: Efficient reactivity with computed properties
-- **Accessibility**: ARIA labels and keyboard support
+- **Zero Lint Errors**: Clean codebase with consistent formatting using ESLint + Prettier
+- **TypeScript Strict Mode**: Full type safety with comprehensive error handling
+- **Optional Chaining**: Robust error prevention throughout the component
+- **Production Ready**: Optimized build with tree-shaking and code splitting
+- **Performance**: Efficient reactivity using Vue 3 Composition API
+- **Accessibility**: ARIA labels, keyboard navigation, and screen reader support
 
 ## Use Cases
 
-- **Financial Applications**: Transaction date selection with historical limits
-- **Reporting Systems**: Date range selection for reports
-- **Booking Systems**: Event date selection with validation
-- **Analytics Dashboards**: Time period selection
-- **Data Entry Forms**: Date input with strict validation
+Perfect for applications requiring strict date validation:
+
+- **Financial Applications**: Transaction date selection with 180-day historical limits
+- **Reporting Systems**: Date range selection for business reports and analytics
+- **Booking Systems**: Event/appointment date selection with validation rules
+- **Analytics Dashboards**: Time period selection for data visualization
+- **Data Entry Forms**: Date input with comprehensive validation and error handling
+- **Audit Systems**: Historical date selection with controlled time ranges
+
+## Known Issues & Solutions
+
+- **Timezone Display Mismatch**: **Fixed** - Now uses local date formatting instead of `toISOString()`
+- **180-Day Calculation**: **Fixed** - Correctly excludes current date from range calculation
+- **Mobile Touch Targets**: **Optimized** - Enhanced spacing (gap-2) for better mobile interaction
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Ensure all tests pass
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes with proper TypeScript types
+4. Ensure zero lint errors (`pnpm run lint`)
+5. Test across all component modes
+6. Submit a pull request with clear description
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License - feel free to use in personal and commercial projects
 
-## Related
+## Related Resources
 
-- [Vue 3 Documentation](https://vuejs.org/)
-- [Tailwind CSS v4](https://tailwindcss.com/)
+- [Vue 3 Documentation](https://vuejs.org/) - Official Vue.js guide
+- [Tailwind CSS v4](https://tailwindcss.com/) - Utility-first CSS framework
+- [TypeScript](https://www.typescriptlang.org/) - Typed JavaScript at scale
+- [Vite](https://vitejs.dev/) - Next generation frontend tooling
 - [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vitejs.dev/)
