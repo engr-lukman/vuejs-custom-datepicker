@@ -1,21 +1,30 @@
 # Vue.js Custom DatePicker
 
-A comprehensive Vue.js date picker component with advanced features, strict 180-day validation, and modern Tailwind CSS styling.
+A comprehensive Vue.js date picker component with advanced features, flexible selection modes, strict validation, and modern Tailwind CSS styling.
 
 ## Features
 
 ### Core Functionality
 
-- **Single Date Selection**: Pick individual dates with smart validation
-- **Date Range Selection**: Select date ranges with intelligent start/end handling
-- **Month Selection**: Single month and month range selection modes
-- **Quick Selection Sidebar**: Preset date ranges (Today, Yesterday, Last 7/30/90 days)
+- **Flexible Selection Modes**: Single or range selection for both dates and months
+- **Two View Types**: Date view (YYYY-MM-DD) and Month view (YYYY-MM)
+- **Mode Support**:
+  - `mode="range"` (default): Select date/month ranges
+  - `mode="single"`: Select individual dates/months
+- **Quick Selection Sidebar**: Preset date ranges (Today, Yesterday, Last 30/180 days) - available only in range mode
 - **Auto-close Behavior**: Automatically closes after selection completion
+
+### Data Format
+
+- **Date View + Single Mode**: Returns `YYYY-MM-DD` string
+- **Date View + Range Mode**: Returns `[YYYY-MM-DD, YYYY-MM-DD]` array
+- **Month View + Single Mode**: Returns `YYYY-MM` string
+- **Month View + Range Mode**: Returns `[YYYY-MM, YYYY-MM]` array
 
 ### Validation & Navigation
 
-- **180-Day Range Limit**: Restricts selections to 180 days before today (excluding current date)
-- **Smart Month Validation**: Allows current month plus previous 5 months only
+- **Configurable Date Limits**: Set min/max dates with `minDate` and `maxDate` props
+- **Smart Month Validation**: Intelligent month range validation based on configured limits
 - **Intelligent Navigation**: Prevents navigation to invalid date ranges with visual feedback
 - **Real-time Validation**: Instant feedback on selectable vs non-selectable dates
 
@@ -53,7 +62,7 @@ pnpm run lint
 
 ## Usage Examples
 
-### Basic Single Date Selection
+### Single Date Selection
 
 ```vue
 <template>
@@ -73,17 +82,17 @@ const selectedDate = ref<string | null>(null)
 
 const handleDateSelection = (date: Date) => {
   console.log('Selected date:', date)
+  // selectedDate.value will be in format: "2024-01-15"
 }
 </script>
 ```
 
-### Date Range with Quick Selection Sidebar
+### Date Range Selection (Default Mode)
 
 ```vue
 <template>
   <DatePicker
     v-model="dateRange"
-    mode="range"
     placeholder="Select date range"
     @range-selected="handleRangeSelection"
   />
@@ -97,17 +106,19 @@ const dateRange = ref<[string, string] | null>(null)
 
 const handleRangeSelection = (range: { start: Date; end: Date }) => {
   console.log('Selected range:', range)
+  // dateRange.value will be in format: ["2024-01-15", "2024-01-20"]
 }
 </script>
 ```
 
-### Month Selection
+### Single Month Selection
 
 ```vue
 <template>
   <DatePicker
     v-model="selectedMonth"
-    mode="month"
+    view="month"
+    mode="single"
     placeholder="Select month"
     @month-selected="handleMonthSelection"
   />
@@ -121,6 +132,7 @@ const selectedMonth = ref<string | null>(null)
 
 const handleMonthSelection = (date: Date) => {
   console.log('Selected month:', date)
+  // selectedMonth.value will be in format: "2024-01"
 }
 </script>
 ```
@@ -131,7 +143,7 @@ const handleMonthSelection = (date: Date) => {
 <template>
   <DatePicker
     v-model="monthRange"
-    mode="month-range"
+    view="month"
     placeholder="Select month range"
     @month-range-selected="handleMonthRangeSelection"
   />
@@ -145,6 +157,7 @@ const monthRange = ref<[string, string] | null>(null)
 
 const handleMonthRangeSelection = (range: { start: Date; end: Date }) => {
   console.log('Selected month range:', range)
+  // monthRange.value will be in format: ["2024-01", "2024-03"]
 }
 </script>
 ```
@@ -153,14 +166,23 @@ const handleMonthRangeSelection = (range: { start: Date; end: Date }) => {
 
 ### Props
 
-| Prop          | Type                                              | Default         | Description                               |
-| ------------- | ------------------------------------------------- | --------------- | ----------------------------------------- |
-| `modelValue`  | `string \| [string, string] \| null`              | `null`          | The selected date(s) in YYYY-MM-DD format |
-| `mode`        | `'single' \| 'range' \| 'month' \| 'month-range'` | `'single'`      | Selection mode                            |
-| `placeholder` | `string`                                          | `'Select date'` | Input placeholder text                    |
-| `disabled`    | `boolean`                                         | `false`         | Disable the component                     |
-| `minDate`     | `string`                                          | 180 days ago    | Minimum selectable date (YYYY-MM-DD)      |
-| `maxDate`     | `string`                                          | Today           | Maximum selectable date (YYYY-MM-DD)      |
+| Prop          | Type                                 | Default   | Description                             |
+| ------------- | ------------------------------------ | --------- | --------------------------------------- |
+| `modelValue`  | `string \| [string, string] \| null` | `null`    | The selected date(s) or month(s)        |
+| `mode`        | `'single' \| 'range'`                | `'range'` | Selection mode (single value or range)  |
+| `view`        | `'date' \| 'month'`                  | `'date'`  | View type (date picker or month picker) |
+| `placeholder` | `string`                             | Auto      | Input placeholder text (auto-generated) |
+| `minDate`     | `string \| null`                     | `null`    | Minimum selectable date/month           |
+| `maxDate`     | `string \| null`                     | `null`    | Maximum selectable date/month           |
+
+#### Model Value Format
+
+The format of `modelValue` depends on the `view` and `mode` combination:
+
+- **Date + Single**: `"2024-01-15"` (YYYY-MM-DD)
+- **Date + Range**: `["2024-01-15", "2024-01-20"]` (YYYY-MM-DD array)
+- **Month + Single**: `"2024-01"` (YYYY-MM)
+- **Month + Range**: `["2024-01", "2024-03"]` (YYYY-MM array)
 
 ### Events
 
@@ -175,17 +197,25 @@ const handleMonthRangeSelection = (range: { start: Date; end: Date }) => {
 ### Types
 
 ```typescript
+interface DatePickerProps {
+  modelValue?: (string | null)[] | string | null
+  placeholder?: string
+  view?: 'date' | 'month'
+  mode?: 'range' | 'single'
+  minDate?: string | null
+  maxDate?: string | null
+}
+
 interface DateRange {
-  start: Date | null
-  end: Date | null
+  start: Date
+  end: Date
 }
 
 interface QuickSelectionOption {
+  key: string
   label: string
-  getValue: () => string | [string, string]
+  getValue: () => string[]
 }
-
-type DatePickerMode = 'single' | 'range' | 'month' | 'month-range'
 ```
 
 ## Styling & Theming

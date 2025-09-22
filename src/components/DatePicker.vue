@@ -4,7 +4,7 @@
     <input
       ref="inputElement"
       :value="displayValue"
-      :placeholder="placeholder"
+      :placeholder="placeholderText"
       readonly
       @click="togglePicker"
       @keydown.enter="togglePicker"
@@ -186,9 +186,10 @@ import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 
 // Types
 interface DatePickerProps {
-  modelValue?: (string | null)[] | null
+  modelValue?: (string | null)[] | string | null
   placeholder?: string
   view?: 'date' | 'month'
+  mode?: 'range' | 'single'
   minDate?: string | null
   maxDate?: string | null
 }
@@ -288,14 +289,15 @@ const formatMonth = (year: number, month: number): string => {
 
 // Props and Emits
 const props = withDefaults(defineProps<DatePickerProps>(), {
-  placeholder: 'Select date range',
+  placeholder: '',
   view: 'date',
+  mode: 'range',
   minDate: null,
   maxDate: null,
 })
 
 const emit = defineEmits<{
-  'update:modelValue': [value: (string | null)[] | null]
+  'update:modelValue': [value: (string | null)[] | string | null]
   'date-selected': [date: Date]
   'range-selected': [range: { start: Date; end: Date }]
   'month-selected': [date: Date]
@@ -308,9 +310,21 @@ const dropdown = ref<HTMLElement | null>(null)
 const isOpen = ref(false)
 const currentDate = ref(new Date())
 const selectedRange = ref<{ start: Date | null; end: Date | null }>({ start: null, end: null })
+const selectedSingle = ref<Date | null>(null)
 
 // Computed Properties
 const isMonthView = computed(() => props.view === 'month')
+const isSingleMode = computed(() => props.mode === 'single')
+
+const placeholderText = computed(() => {
+  if (props.placeholder) return props.placeholder
+
+  if (isSingleMode.value) {
+    return isMonthView.value ? 'Select month' : 'Select date'
+  } else {
+    return isMonthView.value ? 'Select month range' : 'Select date range'
+  }
+})
 
 const displayMonth = computed(() => MONTH_NAMES[currentDate.value.getMonth()])
 const displayYear = computed(() => currentDate.value.getFullYear())
@@ -376,22 +390,31 @@ const canNavigateNext = computed(() => {
 })
 
 const displayValue = computed(() => {
-  if (isMonthView.value) {
-    // Month view - always range mode
-    if (selectedRange.value?.start && selectedRange.value?.end) {
-      return `${formatMonthForDisplay(selectedRange.value.start)} - ${formatMonthForDisplay(selectedRange.value.end)}`
-    } else if (selectedRange.value?.start) {
-      return formatMonthForDisplay(selectedRange.value.start)
+  if (isSingleMode.value) {
+    // Single mode
+    if (selectedSingle.value) {
+      return isMonthView.value
+        ? formatMonthForDisplay(selectedSingle.value)
+        : formatDateForDisplay(selectedSingle.value)
     }
     return ''
   } else {
-    // Date view - always range mode
-    if (selectedRange.value?.start && selectedRange.value?.end) {
-      return `${formatDateForDisplay(selectedRange.value.start)} - ${formatDateForDisplay(selectedRange.value.end)}`
-    } else if (selectedRange.value?.start) {
-      return formatDateForDisplay(selectedRange.value.start)
+    // Range mode
+    if (isMonthView.value) {
+      if (selectedRange.value?.start && selectedRange.value?.end) {
+        return `${formatMonthForDisplay(selectedRange.value.start)} - ${formatMonthForDisplay(selectedRange.value.end)}`
+      } else if (selectedRange.value?.start) {
+        return formatMonthForDisplay(selectedRange.value.start)
+      }
+      return ''
+    } else {
+      if (selectedRange.value?.start && selectedRange.value?.end) {
+        return `${formatDateForDisplay(selectedRange.value.start)} - ${formatDateForDisplay(selectedRange.value.end)}`
+      } else if (selectedRange.value?.start) {
+        return formatDateForDisplay(selectedRange.value.start)
+      }
+      return ''
     }
-    return ''
   }
 })
 
@@ -466,8 +489,8 @@ const monthGrid = computed((): MonthData[] => {
 })
 
 const showQuickSelection = computed(() => {
-  // Always show quick selection for date view
-  return !isMonthView.value
+  // Show quick selection only for date view in range mode
+  return !isMonthView.value && !isSingleMode.value
 })
 
 const quickSelectionOptions = computed((): QuickSelectionOption[] => {
@@ -609,6 +632,10 @@ const isRangeEnd = (date: Date): boolean => {
   return !!(selectedRange.value?.end && isSameDay(date, selectedRange.value.end))
 }
 
+const isSingleSelected = (date: Date): boolean => {
+  return !!(selectedSingle.value && isSameDay(date, selectedSingle.value))
+}
+
 const getDayClasses = (dayData: DayData): string => {
   const classes = []
 
@@ -626,11 +653,18 @@ const getDayClasses = (dayData: DayData): string => {
     classes.push('bg-primary-100 border border-primary-300')
   }
 
-  // Range selection styling
-  if (isRangeStart(dayData.date) || isRangeEnd(dayData.date)) {
-    classes.push('bg-primary-700 text-white')
-  } else if (isDateInSelectedRange(dayData.date)) {
-    classes.push('bg-primary-300 text-white')
+  if (isSingleMode.value) {
+    // Single mode styling
+    if (isSingleSelected(dayData.date)) {
+      classes.push('bg-primary-700 text-white')
+    }
+  } else {
+    // Range selection styling
+    if (isRangeStart(dayData.date) || isRangeEnd(dayData.date)) {
+      classes.push('bg-primary-700 text-white')
+    } else if (isDateInSelectedRange(dayData.date)) {
+      classes.push('bg-primary-300 text-white')
+    }
   }
 
   return classes.join(' ')
@@ -642,40 +676,61 @@ const getMonthClasses = (monthData: MonthData): string => {
   }
 
   const isSelected = isMonthSelected(monthData.date)
-  const isInRange = isMonthInSelectedRange(monthData.date)
-  const isRangeStart = isMonthRangeStart(monthData.date)
-  const isRangeEnd = isMonthRangeEnd(monthData.date)
 
-  if (isRangeStart || isRangeEnd) {
-    return 'bg-primary-700 text-white font-medium shadow-md'
-  } else if (isSelected) {
-    return 'bg-primary-700 text-white font-medium shadow-md'
-  } else if (isInRange) {
-    return 'bg-primary-300 text-white border border-primary-400'
-  } else if (monthData.isCurrentMonth) {
-    return 'bg-primary-100 border border-primary-300 text-primary-800 font-medium'
+  if (isSingleMode.value) {
+    // Single mode styling
+    if (isSelected) {
+      return 'bg-primary-700 text-white font-medium shadow-md'
+    } else if (monthData.isCurrentMonth) {
+      return 'bg-primary-100 border border-primary-300 text-primary-800 font-medium'
+    } else {
+      return 'text-gray-700 hover:bg-gray-100'
+    }
   } else {
-    return 'text-gray-700 hover:bg-gray-100'
+    // Range mode styling
+    const isInRange = isMonthInSelectedRange(monthData.date)
+    const isRangeStart = isMonthRangeStart(monthData.date)
+    const isRangeEnd = isMonthRangeEnd(monthData.date)
+
+    if (isRangeStart || isRangeEnd) {
+      return 'bg-primary-700 text-white font-medium shadow-md'
+    } else if (isSelected) {
+      return 'bg-primary-700 text-white font-medium shadow-md'
+    } else if (isInRange) {
+      return 'bg-primary-300 text-white border border-primary-400'
+    } else if (monthData.isCurrentMonth) {
+      return 'bg-primary-100 border border-primary-300 text-primary-800 font-medium'
+    } else {
+      return 'text-gray-700 hover:bg-gray-100'
+    }
   }
 }
 
 const isMonthSelected = (monthString: string): boolean => {
-  const values = Array.isArray(props.modelValue) ? props.modelValue : []
-  return values.includes(monthString)
+  if (isSingleMode.value) {
+    const value = typeof props.modelValue === 'string' ? props.modelValue : null
+    return value === monthString
+  } else {
+    const values = Array.isArray(props.modelValue) ? props.modelValue : []
+    return values.includes(monthString)
+  }
 }
 
 const isMonthInSelectedRange = (monthString: string): boolean => {
+  if (isSingleMode.value) return false
   const values = Array.isArray(props.modelValue) ? props.modelValue : []
   if (values.length < 2 || !values[0] || !values[1]) return false
   return monthString > values[0] && monthString < values[1]
 }
 
 const isMonthRangeStart = (monthString: string): boolean => {
+  if (isSingleMode.value) return false
   const values = Array.isArray(props.modelValue) ? props.modelValue : []
   return values[0] === monthString
 }
 
 const isMonthRangeEnd = (monthString: string): boolean => {
+  if (isSingleMode.value) return false
   const values = Array.isArray(props.modelValue) ? props.modelValue : []
   return values[1] === monthString
 }
@@ -684,23 +739,34 @@ const isMonthRangeEnd = (monthString: string): boolean => {
 const handleDateClick = (date: Date): void => {
   if (!isDateSelectable(date)) return
 
-  // Range selection logic
-  if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
-    // Start new range
-    selectedRange.value = { start: date, end: null }
-  } else if (selectedRange.value?.start && !selectedRange.value?.end) {
-    // Complete the range
-    if (date >= selectedRange.value.start) {
-      selectedRange.value.end = date
-      emit('range-selected', { start: selectedRange.value.start, end: selectedRange.value.end })
-      emit('update:modelValue', [
-        formatDate(selectedRange.value.start),
-        formatDate(selectedRange.value.end),
-      ])
-      isOpen.value = false
-    } else {
-      // Start new range if selected date is before start
+  if (isSingleMode.value) {
+    // Single mode logic
+    selectedSingle.value = date
+    emit('date-selected', date)
+    emit(
+      'update:modelValue',
+      isMonthView.value ? formatMonth(date.getFullYear(), date.getMonth()) : formatDate(date)
+    )
+    isOpen.value = false
+  } else {
+    // Range selection logic
+    if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
+      // Start new range
       selectedRange.value = { start: date, end: null }
+    } else if (selectedRange.value?.start && !selectedRange.value?.end) {
+      // Complete the range
+      if (date >= selectedRange.value.start) {
+        selectedRange.value.end = date
+        emit('range-selected', { start: selectedRange.value.start, end: selectedRange.value.end })
+        emit('update:modelValue', [
+          formatDate(selectedRange.value.start),
+          formatDate(selectedRange.value.end),
+        ])
+        isOpen.value = false
+      } else {
+        // Start new range if selected date is before start
+        selectedRange.value = { start: date, end: null }
+      }
     }
   }
 }
@@ -710,32 +776,47 @@ const handleMonthClick = (monthData: MonthData): void => {
 
   const selectedMonth = new Date(displayYear.value, monthData.month, 1)
 
-  // Range selection logic for months
-  if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
-    // Start new range
-    selectedRange.value = { start: selectedMonth, end: null }
-  } else if (selectedRange.value?.start && !selectedRange.value?.end) {
-    // Complete the range
-    if (selectedMonth >= selectedRange.value.start) {
-      selectedRange.value.end = selectedMonth
-      emit('month-range-selected', {
-        start: selectedRange.value.start,
-        end: selectedRange.value.end,
-      })
-      emit('update:modelValue', [
-        formatMonth(selectedRange.value.start.getFullYear(), selectedRange.value.start.getMonth()),
-        formatMonth(selectedRange.value.end.getFullYear(), selectedRange.value.end.getMonth()),
-      ])
-      isOpen.value = false
-    } else {
-      // Start new range if selected month is before start
+  if (isSingleMode.value) {
+    // Single mode logic
+    selectedSingle.value = selectedMonth
+    emit('month-selected', selectedMonth)
+    emit('update:modelValue', formatMonth(selectedMonth.getFullYear(), selectedMonth.getMonth()))
+    isOpen.value = false
+  } else {
+    // Range selection logic for months
+    if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
+      // Start new range
       selectedRange.value = { start: selectedMonth, end: null }
+    } else if (selectedRange.value?.start && !selectedRange.value?.end) {
+      // Complete the range
+      if (selectedMonth >= selectedRange.value.start) {
+        selectedRange.value.end = selectedMonth
+        emit('month-range-selected', {
+          start: selectedRange.value.start,
+          end: selectedRange.value.end,
+        })
+        emit('update:modelValue', [
+          formatMonth(
+            selectedRange.value.start.getFullYear(),
+            selectedRange.value.start.getMonth()
+          ),
+          formatMonth(selectedRange.value.end.getFullYear(), selectedRange.value.end.getMonth()),
+        ])
+        isOpen.value = false
+      } else {
+        // Start new range if selected month is before start
+        selectedRange.value = { start: selectedMonth, end: null }
+      }
     }
   }
 }
 
 const clearSelection = (): void => {
-  selectedRange.value = { start: null, end: null }
+  if (isSingleMode.value) {
+    selectedSingle.value = null
+  } else {
+    selectedRange.value = { start: null, end: null }
+  }
   emit('update:modelValue', null)
   isOpen.value = false
 }
@@ -834,24 +915,39 @@ const handleKeyDown = (event: KeyboardEvent): void => {
 watch(
   () => props.modelValue,
   (newValue) => {
-    if (!newValue || !Array.isArray(newValue)) {
-      selectedRange.value = { start: null, end: null }
-      return
-    }
-
-    if (newValue.length >= 2) {
-      try {
-        const dateFormat = isMonthView.value ? '-01' : ''
-        selectedRange.value = {
-          start: newValue[0] ? new Date(newValue[0] + dateFormat) : null,
-          end: newValue[1] ? new Date(newValue[1] + dateFormat) : null,
+    if (isSingleMode.value) {
+      // Single mode
+      if (typeof newValue === 'string' && newValue) {
+        try {
+          const dateFormat = isMonthView.value ? '-01' : ''
+          selectedSingle.value = new Date(newValue + dateFormat)
+        } catch {
+          selectedSingle.value = null
         }
-      } catch {
-        // Reset on invalid date format
-        selectedRange.value = { start: null, end: null }
+      } else {
+        selectedSingle.value = null
       }
     } else {
-      selectedRange.value = { start: null, end: null }
+      // Range mode
+      if (!newValue || !Array.isArray(newValue)) {
+        selectedRange.value = { start: null, end: null }
+        return
+      }
+
+      if (newValue.length >= 2) {
+        try {
+          const dateFormat = isMonthView.value ? '-01' : ''
+          selectedRange.value = {
+            start: newValue[0] ? new Date(newValue[0] + dateFormat) : null,
+            end: newValue[1] ? new Date(newValue[1] + dateFormat) : null,
+          }
+        } catch {
+          // Reset on invalid date format
+          selectedRange.value = { start: null, end: null }
+        }
+      } else {
+        selectedRange.value = { start: null, end: null }
+      }
     }
   },
   { immediate: true }

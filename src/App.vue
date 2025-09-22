@@ -10,7 +10,7 @@
       </header>
 
       <!-- Main Content Grid - Examples of Different Date Picker Configurations -->
-      <main class="grid gap-8 lg:grid-cols-2">
+      <main class="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
         <!-- Example 1: Date Range Selection for Last 30 Days -->
         <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <header class="mb-4">
@@ -165,6 +165,55 @@
             {{ selectedSixMonthRange?.[1] || 'Not set' }}
           </div>
         </section>
+
+        <!-- Example 7: Single Date Selection -->
+        <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <header class="mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">Single Date Selection</h2>
+            <p class="text-sm text-gray-600">Select a single date from the last 30 days</p>
+          </header>
+          <DatePicker
+            v-model="selectedSingleDate"
+            mode="single"
+            :min-date="datePickerConfigurations.oneMonth.minDate"
+            :max-date="datePickerConfigurations.oneMonth.maxDate"
+            aria-label="Select single date"
+          />
+          <div
+            v-if="selectedSingleDate"
+            class="mt-4 rounded bg-gray-50 p-3 text-sm"
+            role="status"
+            aria-live="polite"
+          >
+            <strong>Selected:</strong> {{ selectedSingleDate }}
+          </div>
+        </section>
+
+        <!-- Example 8: Single Month Selection -->
+        <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <header class="mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">Single Month Selection</h2>
+            <p class="text-sm text-gray-600">
+              Select a single month from the current + previous 5 months
+            </p>
+          </header>
+          <DatePicker
+            v-model="selectedSingleMonth"
+            view="month"
+            mode="single"
+            :min-date="datePickerConfigurations.singleMonthSelection.minDate"
+            :max-date="datePickerConfigurations.singleMonthSelection.maxDate"
+            aria-label="Select single month"
+          />
+          <div
+            v-if="selectedSingleMonth"
+            class="mt-4 rounded bg-gray-50 p-3 text-sm"
+            role="status"
+            aria-live="polite"
+          >
+            <strong>Selected:</strong> {{ selectedSingleMonth }}
+          </div>
+        </section>
       </main>
     </div>
   </div>
@@ -176,6 +225,7 @@ import DatePicker from '@/components/DatePicker.vue'
 
 // Define types for date picker functionality
 type SelectedDateRange = string[] | null
+type SelectedSingleValue = string | null
 type DatePickerConfiguration = {
   minDate: string
   maxDate: string
@@ -272,4 +322,8 @@ const selectedSixMonthDateRange = ref<SelectedDateRange>(null)
 const selectedSingleMonthRange = ref<SelectedDateRange>(null)
 const selectedTwoMonthRange = ref<SelectedDateRange>(null)
 const selectedSixMonthRange = ref<SelectedDateRange>(null)
+
+// Reactive state variables for single selections
+const selectedSingleDate = ref<SelectedSingleValue>(null)
+const selectedSingleMonth = ref<SelectedSingleValue>(null)
 </script>
