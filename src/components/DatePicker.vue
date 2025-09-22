@@ -12,30 +12,37 @@
       @keydown.escape="closePicker"
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
-      class="w-full px-3 py-2 pr-10 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-500 text-gray-900 cursor-pointer transition-colors duration-200 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+      class="focus:ring-primary-500 focus:border-primary-500 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 transition-colors duration-200 hover:border-gray-400 focus:ring-2 focus:outline-none"
     />
-    
+
     <!-- Calendar Icon -->
-    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-      <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+      <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+        />
       </svg>
     </div>
 
     <!-- Dropdown -->
-    <div 
+    <div
       v-if="isOpen"
       ref="dropdown"
-      class="absolute top-full left-0 z-50 mt-1 w-80 max-w-[calc(100vw-1rem)] bg-white border border-gray-200 rounded-lg shadow-lg"
+      class="absolute top-full left-0 z-50 mt-1 w-80 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white shadow-lg"
     >
       <!-- Header -->
-      <div class="flex items-center justify-between p-3 border-b border-gray-100">
-        <button 
-          @click="navigatePrevious"
-          class="p-1 rounded hover:bg-gray-100 transition-colors"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      <div class="flex items-center justify-between border-b border-gray-100 p-3">
+        <button @click="navigatePrevious" class="rounded p-1 transition-colors hover:bg-gray-100">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
 
@@ -44,12 +51,14 @@
           <span v-else>{{ monthNames[displayMonth] }} {{ displayYear }}</span>
         </h2>
 
-        <button 
-          @click="navigateNext"
-          class="p-1 rounded hover:bg-gray-100 transition-colors"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        <button @click="navigateNext" class="rounded p-1 transition-colors hover:bg-gray-100">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         </button>
       </div>
@@ -63,7 +72,7 @@
             :key="month.month"
             @click="selectMonth(month)"
             :class="getMonthClasses(month)"
-            class="p-2 text-xs rounded hover:bg-blue-50 transition-colors"
+            class="rounded p-2 text-xs transition-colors hover:bg-blue-50"
           >
             {{ month.shortName }}
           </button>
@@ -72,11 +81,11 @@
         <!-- Day Picker -->
         <template v-else>
           <!-- Day Headers -->
-          <div class="grid grid-cols-7 gap-1 mb-1">
-            <div 
+          <div class="mb-1 grid grid-cols-7 gap-1">
+            <div
               v-for="day in dayNames"
               :key="day"
-              class="h-8 flex items-center justify-center text-xs font-medium text-gray-500"
+              class="flex h-8 items-center justify-center text-xs font-medium text-gray-500"
             >
               {{ day }}
             </div>
@@ -89,35 +98,43 @@
               :key="index"
               @click="selectDate(day)"
               :class="getDayClasses(day)"
-              class="h-8 flex items-center justify-center text-xs rounded transition-colors"
+              class="flex h-8 items-center justify-center rounded text-xs transition-colors"
             >
               {{ day.day }}
             </button>
           </div>
         </template>
-        
+
         <!-- Range Selection Info -->
-        <div v-if="range && isSelectingRange" class="mt-2 p-2 bg-primary-50 rounded text-xs text-primary-700 text-center">
+        <div
+          v-if="range && isSelectingRange"
+          class="bg-primary-50 text-primary-700 mt-2 rounded p-2 text-center text-xs"
+        >
           <span v-if="monthPicker">Select the end month for your range</span>
           <span v-else>Select the end date for your range</span>
         </div>
-        <div v-else-if="range && !isSelectingRange && !hasRangeStart" class="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 text-center">
+        <div
+          v-else-if="range && !isSelectingRange && !hasRangeStart"
+          class="mt-2 rounded bg-gray-50 p-2 text-center text-xs text-gray-600"
+        >
           <span v-if="monthPicker">Select the start month for your range</span>
           <span v-else>Select the start date for your range</span>
         </div>
       </div>
 
       <!-- Footer -->
-      <div class="flex items-center justify-between p-3 border-t border-gray-100 bg-gray-50 rounded-b-lg">
-        <button 
+      <div
+        class="flex items-center justify-between rounded-b-lg border-t border-gray-100 bg-gray-50 p-3"
+      >
+        <button
           @click="setToday"
-          class="px-3 py-1 text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition-colors"
+          class="bg-primary-600 hover:bg-primary-700 rounded px-3 py-1 text-xs font-medium text-white transition-colors"
         >
           Today
         </button>
-        <button 
+        <button
           @click="clearDate"
-          class="px-3 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+          class="rounded border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
         >
           Clear
         </button>
@@ -125,10 +142,10 @@
     </div>
 
     <!-- Mobile Backdrop -->
-    <div 
+    <div
       v-if="isOpen"
       @click="closePicker"
-      class="fixed inset-0 z-40 sm:hidden bg-black bg-opacity-25"
+      class="bg-opacity-25 fixed inset-0 z-40 bg-black sm:hidden"
     />
   </div>
 </template>
@@ -152,7 +169,7 @@ const props = withDefaults(defineProps<Props>(), {
   monthPicker: false,
   minDate: null,
   maxDate: null,
-  enableDateValidation: true
+  enableDateValidation: true,
 })
 
 const emit = defineEmits<{
@@ -169,8 +186,18 @@ const isSelectingRange = ref(false)
 
 // Constants
 const monthNames = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ]
 
 const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
@@ -179,7 +206,7 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 const minDateForValidation = computed(() => {
   if (props.minDate) return props.minDate
   if (!props.enableDateValidation) return null
-  
+
   // 180 days before current date
   const today = new Date()
   const minDate = new Date(today)
@@ -190,7 +217,7 @@ const minDateForValidation = computed(() => {
 const maxDateForValidation = computed(() => {
   if (props.maxDate) return props.maxDate
   if (!props.enableDateValidation) return null
-  
+
   // Current date
   const today = new Date()
   return formatDate(today)
@@ -206,7 +233,7 @@ const displayValue = computed(() => {
     }
     return ''
   }
-  return props.modelValue as string || ''
+  return (props.modelValue as string) || ''
 })
 
 const hasRangeStart = computed(() => {
@@ -220,7 +247,7 @@ const monthGrid = computed(() => {
     month: index,
     name,
     shortName: name.slice(0, 3),
-    date: `${displayYear.value}-${String(index + 1).padStart(2, '0')}`
+    date: `${displayYear.value}-${String(index + 1).padStart(2, '0')}`,
   }))
 })
 
@@ -240,7 +267,7 @@ const calendarDays = computed(() => {
       year: current.getFullYear(),
       isCurrentMonth: current.getMonth() === displayMonth.value,
       isToday: isToday(current),
-      dateString: formatDate(current)
+      dateString: formatDate(current),
     })
     current.setDate(current.getDate() + 1)
   }
@@ -251,14 +278,14 @@ const calendarDays = computed(() => {
 // Helper Functions
 const isDateDisabled = (dateString: string): boolean => {
   if (!props.enableDateValidation) return false
-  
+
   const date = new Date(dateString)
   const minDate = minDateForValidation.value ? new Date(minDateForValidation.value) : null
   const maxDate = maxDateForValidation.value ? new Date(maxDateForValidation.value) : null
-  
+
   if (minDate && date < minDate) return true
   if (maxDate && date > maxDate) return true
-  
+
   return false
 }
 
@@ -319,14 +346,14 @@ const selectDate = (day: any) => {
 
   if (props.range) {
     const currentRange = Array.isArray(props.modelValue) ? [...props.modelValue] : [null, null]
-    
+
     if (!currentRange[0] || (currentRange[0] && currentRange[1])) {
       emit('update:modelValue', [selectedDate, null])
       isSelectingRange.value = true
     } else {
       const startDate = new Date(currentRange[0])
       const endDate = new Date(selectedDate)
-      
+
       if (endDate < startDate) {
         emit('update:modelValue', [selectedDate, currentRange[0]])
       } else {
@@ -346,14 +373,14 @@ const selectMonth = (month: any) => {
 
   if (props.range) {
     const currentRange = Array.isArray(props.modelValue) ? [...props.modelValue] : [null, null]
-    
+
     if (!currentRange[0] || (currentRange[0] && currentRange[1])) {
       emit('update:modelValue', [selectedMonth, null])
       isSelectingRange.value = true
     } else {
       const startMonth = currentRange[0]
       const endMonth = selectedMonth
-      
+
       if (endMonth < startMonth) {
         emit('update:modelValue', [selectedMonth, currentRange[0]])
       } else {
@@ -370,7 +397,7 @@ const selectMonth = (month: any) => {
 
 const setToday = () => {
   const today = new Date()
-  
+
   if (props.monthPicker) {
     const monthString = formatMonth(today.getFullYear(), today.getMonth())
     if (props.range) {
@@ -386,7 +413,7 @@ const setToday = () => {
       emit('update:modelValue', dateString)
     }
   }
-  
+
   displayMonth.value = today.getMonth()
   displayYear.value = today.getFullYear()
   closePicker()
@@ -447,7 +474,7 @@ const getMonthClasses = (month: any) => {
 const isDateSelected = (dateString: string): boolean => {
   if (props.range) {
     const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
-    return values.some(v => v === dateString)
+    return values.some((v) => v === dateString)
   }
   return props.modelValue === dateString
 }
@@ -456,11 +483,11 @@ const isDateInRange = (dateString: string): boolean => {
   if (!props.range) return false
   const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
   if (!values[0] || !values[1]) return false
-  
+
   const date = new Date(dateString)
   const start = new Date(values[0])
   const end = new Date(values[1])
-  
+
   return date > start && date < end
 }
 
@@ -479,7 +506,7 @@ const isDateRangeEnd = (dateString: string): boolean => {
 const isMonthSelected = (monthString: string): boolean => {
   if (props.range) {
     const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
-    return values.some(v => v === monthString)
+    return values.some((v) => v === monthString)
   }
   return props.modelValue === monthString
 }
@@ -488,7 +515,7 @@ const isMonthInRange = (monthString: string): boolean => {
   if (!props.range) return false
   const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
   if (!values[0] || !values[1]) return false
-  
+
   return monthString > values[0] && monthString < values[1]
 }
 
@@ -507,7 +534,7 @@ const isMonthRangeEnd = (monthString: string): boolean => {
 // Click outside functionality
 const handleClickOutside = (event: MouseEvent) => {
   if (
-    dropdown.value && 
+    dropdown.value &&
     !dropdown.value.contains(event.target as Node) &&
     inputElement.value &&
     !inputElement.value.contains(event.target as Node)
@@ -526,7 +553,10 @@ onUnmounted(() => {
 })
 
 // Watch for external changes
-watch(() => props.modelValue, () => {
-  isSelectingRange.value = false
-})
+watch(
+  () => props.modelValue,
+  () => {
+    isSelectingRange.value = false
+  }
+)
 </script>

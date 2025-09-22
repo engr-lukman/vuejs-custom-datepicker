@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-3xl mx-auto">
+  <div class="min-h-screen bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-3xl">
       <!-- Header -->
-      <div class="text-center mb-12">
+      <div class="mb-12 text-center">
         <h1 class="text-3xl font-bold text-gray-900 sm:text-4xl">Vue 3 Date Picker</h1>
         <p class="mt-4 text-lg text-gray-600">
           A clean, reusable date picker component with multiple selection modes
@@ -12,29 +12,29 @@
       <!-- Examples Grid -->
       <div class="grid gap-8 md:grid-cols-2">
         <!-- Single Date with Validation -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">Single Date (Validated)</h2>
+        <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 class="mb-4 text-lg font-semibold text-gray-900">Single Date (Validated)</h2>
           <DatePicker
             v-model="singleDate"
             placeholder="Select a date (last 180 days)"
             :enable-date-validation="true"
           />
-          <div v-if="singleDate" class="mt-4 p-3 bg-gray-50 rounded text-sm">
+          <div v-if="singleDate" class="mt-4 rounded bg-gray-50 p-3 text-sm">
             <strong>Selected:</strong> {{ singleDate }}
           </div>
           <div class="mt-2 text-xs text-gray-500">Valid range: Last 180 days to today</div>
         </div>
 
         <!-- Date Range with Validation -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">Date Range (Validated)</h2>
+        <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 class="mb-4 text-lg font-semibold text-gray-900">Date Range (Validated)</h2>
           <DatePicker
             v-model="dateRange"
             :range="true"
             placeholder="Select date range (last 180 days)"
             :enable-date-validation="true"
           />
-          <div v-if="dateRange?.[0] || dateRange?.[1]" class="mt-4 p-3 bg-gray-50 rounded text-sm">
+          <div v-if="dateRange?.[0] || dateRange?.[1]" class="mt-4 rounded bg-gray-50 p-3 text-sm">
             <strong>Selected:</strong>
             {{ dateRange?.[0] || 'Not set' }} to {{ dateRange?.[1] || 'Not set' }}
           </div>
@@ -42,17 +42,17 @@
         </div>
 
         <!-- Single Month -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">Single Month</h2>
+        <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 class="mb-4 text-lg font-semibold text-gray-900">Single Month</h2>
           <DatePicker v-model="singleMonth" :month-picker="true" placeholder="Select a month" />
-          <div v-if="singleMonth" class="mt-4 p-3 bg-gray-50 rounded text-sm">
+          <div v-if="singleMonth" class="mt-4 rounded bg-gray-50 p-3 text-sm">
             <strong>Selected:</strong> {{ singleMonth }}
           </div>
         </div>
 
         <!-- Month Range -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">Month Range</h2>
+        <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 class="mb-4 text-lg font-semibold text-gray-900">Month Range</h2>
           <DatePicker
             v-model="monthRange"
             :range="true"
@@ -61,7 +61,7 @@
           />
           <div
             v-if="monthRange?.[0] || monthRange?.[1]"
-            class="mt-4 p-3 bg-gray-50 rounded text-sm"
+            class="mt-4 rounded bg-gray-50 p-3 text-sm"
           >
             <strong>Selected:</strong>
             {{ monthRange?.[0] || 'Not set' }} to {{ monthRange?.[1] || 'Not set' }}
@@ -70,39 +70,39 @@
       </div>
 
       <!-- Features -->
-      <div class="mt-12 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-6">Features</h2>
+      <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 class="mb-6 text-xl font-semibold text-gray-900">Features</h2>
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="flex items-center">
-            <CheckIcon class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
             <span class="text-gray-700">Date validation (180 days range)</span>
           </div>
           <div class="flex items-center">
-            <CheckIcon class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
             <span class="text-gray-700">Custom primary color (#E54993)</span>
           </div>
           <div class="flex items-center">
-            <CheckIcon class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
             <span class="text-gray-700">Single date selection</span>
           </div>
           <div class="flex items-center">
-            <CheckIcon class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
             <span class="text-gray-700">Date range selection</span>
           </div>
           <div class="flex items-center">
-            <CheckIcon class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
             <span class="text-gray-700">Month selection</span>
           </div>
           <div class="flex items-center">
-            <CheckIcon class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
             <span class="text-gray-700">Month range selection</span>
           </div>
           <div class="flex items-center">
-            <CheckIcon class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
             <span class="text-gray-700">Mobile responsive</span>
           </div>
           <div class="flex items-center">
-            <CheckIcon class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
             <span class="text-gray-700">Accessible design</span>
           </div>
         </div>
