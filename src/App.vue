@@ -30,7 +30,11 @@
 
         <!-- Date Range with Custom Range -->
         <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 class="mb-4 text-lg font-semibold text-gray-900">Date Range (180 Days Range)</h2>
+          <h2 class="mb-4 text-lg font-semibold text-gray-900">Date Range with Quick Selection</h2>
+          <p class="mb-3 text-sm text-gray-600">
+            Features quick selection options: Today, Yesterday, Last 30 days, This month, Last
+            month, 180 days
+          </p>
           <DatePicker
             v-model="dateRange"
             :range="true"

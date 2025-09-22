@@ -31,97 +31,147 @@
     <div
       v-if="isOpen"
       ref="dropdown"
-      class="absolute top-full left-0 z-50 mt-1 w-80 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white shadow-lg"
+      class="absolute top-full left-0 z-50 mt-1 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white shadow-lg"
+      :class="showQuickSelection ? 'w-96' : 'w-80'"
     >
-      <!-- Header -->
-      <div class="flex items-center justify-between border-b border-gray-100 p-3">
-        <button
-          @click="navigatePrevious"
-          :disabled="!canNavigatePrevious"
-          class="cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-
-        <h2 class="text-sm font-medium text-gray-900">
-          {{ isMonthView ? displayYear : `${displayMonth} ${displayYear}` }}
-        </h2>
-
-        <button
-          @click="navigateNext"
-          :disabled="!canNavigateNext"
-          class="cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
-      </div>
-
-      <!-- Month View -->
-      <div v-if="isMonthView" class="p-3">
-        <div class="grid grid-cols-3 gap-2">
-          <button
-            v-for="monthData in monthGrid"
-            :key="monthData.month"
-            :disabled="!isMonthSelectable(displayYear, monthData.month)"
-            @click="handleMonthClick(monthData)"
-            :class="getMonthClasses(monthData)"
-            class="relative cursor-pointer rounded px-3 py-2 text-sm transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {{ monthData.shortName }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Date View -->
-      <div v-else class="p-3">
-        <!-- Day headers -->
-        <div class="mb-2 grid grid-cols-7 gap-1">
-          <div
-            v-for="day in DAY_NAMES"
-            :key="day"
-            class="text-center text-xs font-medium text-gray-500"
-          >
-            {{ day }}
+      <div class="flex">
+        <!-- Quick Selection Sidebar (only for date view and range mode) -->
+        <div v-if="showQuickSelection" class="w-36 border-r border-gray-100 bg-gray-50">
+          <div class="p-2">
+            <div class="mb-2 text-xs font-medium tracking-wide text-gray-600 uppercase">
+              Quick Select
+            </div>
+            <div class="space-y-1">
+              <button
+                v-for="option in quickSelectionOptions"
+                :key="option.key"
+                @click="handleQuickSelection(option)"
+                :class="getQuickSelectionClasses(option)"
+                class="hover:bg-primary-100 w-full rounded px-2 py-1.5 text-left text-xs transition-colors"
+              >
+                {{ option.label }}
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Date grid -->
-        <div class="grid grid-cols-7 gap-1">
-          <button
-            v-for="dayData in calendarDays"
-            :key="dayData.dateString"
-            :disabled="!dayData.isCurrentMonth || !isDateSelectable(dayData.date)"
-            @click="handleDateClick(dayData.date)"
-            :class="getDayClasses(dayData)"
-            class="relative h-8 w-8 cursor-pointer rounded text-sm transition-colors"
-          >
-            {{ dayData.day }}
-          </button>
-        </div>
-      </div>
+        <!-- Main Calendar Content -->
+        <div class="flex-1">
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-gray-100 p-3">
+            <button
+              @click="navigatePrevious"
+              :disabled="!canNavigatePrevious"
+              class="cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
 
-      <!-- Footer -->
-      <div class="flex justify-end border-t border-gray-100 p-3">
-        <button
-          @click="clearSelection"
-          class="rounded bg-gray-100 px-3 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-200"
-        >
-          Clear
-        </button>
+            <h2 class="text-sm font-medium text-gray-900">
+              {{ isMonthView ? displayYear : `${displayMonth} ${displayYear}` }}
+            </h2>
+
+            <button
+              @click="navigateNext"
+              :disabled="!canNavigateNext"
+              class="cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Month View -->
+          <div v-if="isMonthView" class="p-3">
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                v-for="monthData in monthGrid"
+                :key="monthData.month"
+                :disabled="!isMonthSelectable(displayYear, monthData.month)"
+                @click="handleMonthClick(monthData)"
+                :class="getMonthClasses(monthData)"
+                class="relative cursor-pointer rounded px-3 py-2 text-sm transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {{ monthData.shortName }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Date View -->
+          <div v-else class="p-3">
+            <!-- Day headers -->
+            <div class="mb-2 grid grid-cols-7 gap-1">
+              <div
+                v-for="day in DAY_NAMES"
+                :key="day"
+                class="text-center text-xs font-medium text-gray-500"
+              >
+                {{ day }}
+              </div>
+            </div>
+
+            <!-- Date grid -->
+            <div class="grid grid-cols-7 gap-1">
+              <button
+                v-for="dayData in calendarDays"
+                :key="dayData.dateString"
+                :disabled="!dayData.isCurrentMonth || !isDateSelectable(dayData.date)"
+                @click="handleDateClick(dayData.date)"
+                :class="getDayClasses(dayData)"
+                class="relative h-8 w-8 cursor-pointer rounded text-sm transition-colors"
+              >
+                {{ dayData.day }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex justify-between border-t border-gray-100 p-3">
+            <div class="flex items-center space-x-2">
+              <svg
+                class="h-4 w-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <div class="flex space-x-2">
+              <button
+                @click="clearSelection"
+                class="rounded bg-gray-100 px-3 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                v-if="hasValidSelection"
+                @click="confirmSelection"
+                class="bg-primary-700 hover:bg-primary-800 rounded px-3 py-1 text-sm text-white transition-colors"
+              >
+                Select
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -157,6 +207,12 @@ interface MonthData {
   shortName: string
   date: string
   isCurrentMonth: boolean
+}
+
+interface QuickSelectionOption {
+  key: string
+  label: string
+  getValue: () => string | string[]
 }
 
 // Constants
@@ -415,6 +471,67 @@ const monthGrid = computed((): MonthData[] => {
   }))
 })
 
+const showQuickSelection = computed(() => {
+  return !isMonthView.value && actualMode.value === 'range'
+})
+
+const quickSelectionOptions = computed((): QuickSelectionOption[] => {
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+  const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0)
+
+  const last30Days = new Date(today)
+  last30Days.setDate(today.getDate() - 29)
+
+  const last180Days = new Date(today)
+  last180Days.setDate(today.getDate() - 179)
+
+  return [
+    {
+      key: 'today',
+      label: 'Today',
+      getValue: () => [formatDate(today), formatDate(today)],
+    },
+    {
+      key: 'yesterday',
+      label: 'Yesterday',
+      getValue: () => [formatDate(yesterday), formatDate(yesterday)],
+    },
+    {
+      key: 'last30days',
+      label: 'Last 30 days',
+      getValue: () => [formatDate(last30Days), formatDate(today)],
+    },
+    {
+      key: 'thismonth',
+      label: 'This month',
+      getValue: () => [formatDate(startOfMonth), formatDate(today)],
+    },
+    {
+      key: 'lastmonth',
+      label: 'Last month',
+      getValue: () => [formatDate(startOfLastMonth), formatDate(endOfLastMonth)],
+    },
+    {
+      key: 'last180days',
+      label: '180 days',
+      getValue: () => [formatDate(last180Days), formatDate(today)],
+    },
+  ]
+})
+
+const hasValidSelection = computed(() => {
+  if (actualMode.value === 'range') {
+    return selectedRange.value.start && selectedRange.value.end
+  } else {
+    return selectedDate.value !== null
+  }
+})
+
 // Helper Functions
 const formatMonthForDisplay = (date: Date): string => {
   try {
@@ -648,6 +765,37 @@ const clearSelection = (): void => {
     selectedDate.value = null
   }
   emit('update:modelValue', null)
+  isOpen.value = false
+}
+
+const handleQuickSelection = (option: QuickSelectionOption): void => {
+  const value = option.getValue()
+  if (Array.isArray(value)) {
+    // Range selection
+    const startDate = new Date(value[0])
+    const endDate = new Date(value[1])
+    selectedRange.value = { start: startDate, end: endDate }
+    emit('range-selected', { start: startDate, end: endDate })
+    emit('update:modelValue', value)
+  } else {
+    // Single date selection
+    const date = new Date(value)
+    selectedDate.value = date
+    emit('date-selected', date)
+    emit('update:modelValue', value)
+  }
+}
+
+const getQuickSelectionClasses = (option: QuickSelectionOption): string => {
+  const value = option.getValue()
+  const isSelected = Array.isArray(props.modelValue)
+    ? props.modelValue[0] === value[0] && props.modelValue[1] === value[1]
+    : props.modelValue === value
+
+  return isSelected ? 'bg-primary-700 text-white font-medium' : 'text-gray-700 hover:bg-primary-100'
+}
+
+const confirmSelection = (): void => {
   isOpen.value = false
 }
 
