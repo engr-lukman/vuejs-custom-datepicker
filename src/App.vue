@@ -68,45 +68,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Features -->
-      <div class="mt-12 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 class="mb-6 text-xl font-semibold text-gray-900">Features</h2>
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div class="flex items-center">
-            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
-            <span class="text-gray-700">Date validation (180 days range)</span>
-          </div>
-          <div class="flex items-center">
-            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
-            <span class="text-gray-700">Custom primary color (#E54993)</span>
-          </div>
-          <div class="flex items-center">
-            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
-            <span class="text-gray-700">Single date selection</span>
-          </div>
-          <div class="flex items-center">
-            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
-            <span class="text-gray-700">Date range selection</span>
-          </div>
-          <div class="flex items-center">
-            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
-            <span class="text-gray-700">Month selection</span>
-          </div>
-          <div class="flex items-center">
-            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
-            <span class="text-gray-700">Month range selection</span>
-          </div>
-          <div class="flex items-center">
-            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
-            <span class="text-gray-700">Mobile responsive</span>
-          </div>
-          <div class="flex items-center">
-            <CheckIcon class="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
-            <span class="text-gray-700">Accessible design</span>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -120,13 +81,4 @@ const singleDate = ref<string | null>(null)
 const dateRange = ref<string[] | null>(null)
 const singleMonth = ref<string | null>(null)
 const monthRange = ref<string[] | null>(null)
-
-// Icon Component
-const CheckIcon = {
-  template: `
-    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-    </svg>
-  `,
-}
 </script>

@@ -12,4 +12,30 @@
   --color-primary-800: #9d174d;
   --color-primary-900: #831843;
   --color-primary-950: #500724;
+
+  /* Date range colors */
+  --color-range-50: #f0f9ff;
+  --color-range-100: #e0f2fe;
+  --color-range-200: #bae6fd;
+  --color-range-300: #7dd3fc;
+  --color-range-400: #38bdf8;
+  --color-range-500: #0ea5e9;
+  --color-range-600: #0284c7;
+  --color-range-700: #0369a1;
+  --color-range-800: #075985;
+  --color-range-900: #0c4a6e;
+  --color-range-950: #082f49;
+
+  /* Today indicator colors */
+  --color-today-50: #fefce8;
+  --color-today-100: #fef9c3;
+  --color-today-200: #fef08a;
+  --color-today-300: #fde047;
+  --color-today-400: #facc15;
+  --color-today-500: #eab308;
+  --color-today-600: #ca8a04;
+  --color-today-700: #a16207;
+  --color-today-800: #854d0e;
+  --color-today-900: #713f12;
+  --color-today-950: #422006;
 }

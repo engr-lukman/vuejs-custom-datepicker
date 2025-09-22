@@ -153,6 +153,24 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
+// Types
+interface DayData {
+  date: Date
+  day: number
+  month: number
+  year: number
+  isCurrentMonth: boolean
+  isToday: boolean
+  dateString: string
+}
+
+interface MonthData {
+  month: number
+  name: string
+  shortName: string
+  date: string
+}
+
 interface Props {
   modelValue?: string | (string | null)[] | null
   placeholder?: string
@@ -242,7 +260,7 @@ const hasRangeStart = computed(() => {
   return Boolean(values[0])
 })
 
-const monthGrid = computed(() => {
+const monthGrid = computed((): MonthData[] => {
   return monthNames.map((name, index) => ({
     month: index,
     name,
@@ -251,12 +269,12 @@ const monthGrid = computed(() => {
   }))
 })
 
-const calendarDays = computed(() => {
+const calendarDays = computed((): DayData[] => {
   const firstDay = new Date(displayYear.value, displayMonth.value, 1)
   const startDate = new Date(firstDay)
   startDate.setDate(startDate.getDate() - firstDay.getDay())
 
-  const days = []
+  const days: DayData[] = []
   const current = new Date(startDate)
 
   for (let i = 0; i < 42; i++) {
@@ -279,27 +297,49 @@ const calendarDays = computed(() => {
 const isDateDisabled = (dateString: string): boolean => {
   if (!props.enableDateValidation) return false
 
-  const date = new Date(dateString)
-  const minDate = minDateForValidation.value ? new Date(minDateForValidation.value) : null
-  const maxDate = maxDateForValidation.value ? new Date(maxDateForValidation.value) : null
+  try {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return true
 
-  if (minDate && date < minDate) return true
-  if (maxDate && date > maxDate) return true
+    const minDate = minDateForValidation.value ? new Date(minDateForValidation.value) : null
+    const maxDate = maxDateForValidation.value ? new Date(maxDateForValidation.value) : null
 
-  return false
+    if (minDate && date < minDate) return true
+    if (maxDate && date > maxDate) return true
+
+    return false
+  } catch {
+    return true
+  }
 }
 
 const isToday = (date: Date): boolean => {
-  const today = new Date()
-  return date.toDateString() === today.toDateString()
+  try {
+    const today = new Date()
+    return (
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth() &&
+      date.getDate() === today.getDate()
+    )
+  } catch {
+    return false
+  }
 }
 
 const formatDate = (date: Date): string => {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  try {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  } catch {
+    return ''
+  }
 }
 
 const formatMonth = (year: number, month: number): string => {
-  return `${year}-${String(month + 1).padStart(2, '0')}`
+  try {
+    return `${year}-${String(month + 1).padStart(2, '0')}`
+  } catch {
+    return ''
+  }
 }
 
 // Methods
@@ -338,7 +378,7 @@ const navigateNext = () => {
   }
 }
 
-const selectDate = (day: any) => {
+const selectDate = (day: DayData) => {
   if (!day.isCurrentMonth) return
   if (isDateDisabled(day.dateString)) return
 
@@ -368,7 +408,7 @@ const selectDate = (day: any) => {
   }
 }
 
-const selectMonth = (month: any) => {
+const selectMonth = (month: MonthData) => {
   const selectedMonth = month.date
 
   if (props.range) {
@@ -396,41 +436,58 @@ const selectMonth = (month: any) => {
 }
 
 const setToday = () => {
-  const today = new Date()
+  try {
+    const today = new Date()
 
-  if (props.monthPicker) {
-    const monthString = formatMonth(today.getFullYear(), today.getMonth())
-    if (props.range) {
-      emit('update:modelValue', [monthString, monthString])
-    } else {
-      emit('update:modelValue', monthString)
+    // Check if today is disabled before setting it
+    const todayString = formatDate(today)
+    if (isDateDisabled(todayString)) {
+      // If today is disabled, don't set it and close the picker
+      closePicker()
+      return
     }
-  } else {
-    const dateString = formatDate(today)
-    if (props.range) {
-      emit('update:modelValue', [dateString, dateString])
+
+    if (props.monthPicker) {
+      const monthString = formatMonth(today.getFullYear(), today.getMonth())
+      if (props.range) {
+        emit('update:modelValue', [monthString, monthString])
+      } else {
+        emit('update:modelValue', monthString)
+      }
     } else {
-      emit('update:modelValue', dateString)
+      if (props.range) {
+        emit('update:modelValue', [todayString, todayString])
+      } else {
+        emit('update:modelValue', todayString)
+      }
     }
+
+    displayMonth.value = today.getMonth()
+    displayYear.value = today.getFullYear()
+    closePicker()
+  } catch (error) {
+    console.warn('Error setting today date:', error)
+    closePicker()
   }
-
-  displayMonth.value = today.getMonth()
-  displayYear.value = today.getFullYear()
-  closePicker()
 }
 
 const clearDate = () => {
-  if (props.range) {
-    emit('update:modelValue', [null, null])
-  } else {
-    emit('update:modelValue', null)
+  try {
+    if (props.range) {
+      emit('update:modelValue', [null, null])
+    } else {
+      emit('update:modelValue', null)
+    }
+    isSelectingRange.value = false
+    closePicker()
+  } catch (error) {
+    console.warn('Error clearing date:', error)
+    closePicker()
   }
-  isSelectingRange.value = false
-  closePicker()
 }
 
 // Styling Methods
-const getDayClasses = (day: any) => {
+const getDayClasses = (day: DayData): string => {
   if (!day.isCurrentMonth) {
     return 'text-gray-300 cursor-not-allowed'
   }
@@ -444,27 +501,35 @@ const getDayClasses = (day: any) => {
   const isRangeStart = isDateRangeStart(day.dateString)
   const isRangeEnd = isDateRangeEnd(day.dateString)
 
-  if (isSelected || isRangeStart || isRangeEnd) {
-    return 'bg-primary-600 text-white font-medium'
+  if (isRangeStart) {
+    return 'bg-primary-600 text-white font-medium shadow-md'
+  } else if (isRangeEnd) {
+    return 'bg-primary-700 text-white font-medium shadow-md'
+  } else if (isSelected) {
+    return 'bg-primary-600 text-white font-medium shadow-md'
   } else if (isInRange) {
-    return 'bg-primary-100 text-primary-800'
+    return 'bg-range-100 text-range-800 border border-range-200'
   } else if (day.isToday) {
-    return 'bg-primary-500 text-white font-medium'
+    return 'border-2 border-today-500 bg-today-50 text-today-800 font-medium'
   } else {
     return 'text-gray-700 hover:bg-gray-100'
   }
 }
 
-const getMonthClasses = (month: any) => {
+const getMonthClasses = (month: MonthData): string => {
   const isSelected = isMonthSelected(month.date)
   const isInRange = isMonthInRange(month.date)
   const isRangeStart = isMonthRangeStart(month.date)
   const isRangeEnd = isMonthRangeEnd(month.date)
 
-  if (isSelected || isRangeStart || isRangeEnd) {
-    return 'bg-primary-600 text-white font-medium'
+  if (isRangeStart) {
+    return 'bg-primary-600 text-white font-medium shadow-md'
+  } else if (isRangeEnd) {
+    return 'bg-primary-700 text-white font-medium shadow-md'
+  } else if (isSelected) {
+    return 'bg-primary-600 text-white font-medium shadow-md'
   } else if (isInRange) {
-    return 'bg-primary-100 text-primary-800'
+    return 'bg-range-100 text-range-800 border border-range-200'
   } else {
     return 'text-gray-700 hover:bg-gray-100'
   }
