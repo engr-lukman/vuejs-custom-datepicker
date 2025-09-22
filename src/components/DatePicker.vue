@@ -216,6 +216,7 @@ interface QuickSelectionOption {
   key: string
   label: string
   getValue: () => string[]
+  isVisible?: boolean
 }
 
 // Constants
@@ -496,51 +497,63 @@ const showQuickSelection = computed(() => {
 const quickSelectionOptions = computed((): QuickSelectionOption[] => {
   const today = new Date()
 
-  const options: QuickSelectionOption[] = []
-
-  // Today
-  options.push({
-    key: 'today',
-    label: 'Today',
-    getValue: () => [formatDate(today), formatDate(today)],
-  })
-
-  // Yesterday
-  const yesterday = new Date(today)
-  yesterday.setDate(today.getDate() - 1)
-  options.push({
-    key: 'yesterday',
-    label: 'Yesterday',
-    getValue: () => [formatDate(yesterday), formatDate(yesterday)],
-  })
-
-  // Last 30 days
-  const last30Days = new Date(today)
-  last30Days.setDate(today.getDate() - 29)
-  options.push({
-    key: 'last30days',
-    label: 'Last 30 days',
-    getValue: () => [formatDate(last30Days), formatDate(today)],
-  })
-
-  // This month
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-  options.push({
-    key: 'thismonth',
-    label: 'This month',
-    getValue: () => [formatDate(startOfMonth), formatDate(today)],
-  })
-
-  // 6 months (180 days)
-  const last180Days = new Date(today)
-  last180Days.setDate(today.getDate() - 179)
-  options.push({
-    key: 'last180days',
-    label: '6 month',
-    getValue: () => [formatDate(last180Days), formatDate(today)],
-  })
-
-  return options
+  return [
+    {
+      key: 'today',
+      label: 'Today',
+      getValue: () => [formatDate(today), formatDate(today)],
+      isVisible: true,
+    },
+    {
+      key: 'yesterday',
+      label: 'Yesterday',
+      getValue: () => {
+        const yesterday = new Date(today)
+        yesterday.setDate(today.getDate() - 1)
+        return [formatDate(yesterday), formatDate(yesterday)]
+      },
+      isVisible: true,
+    },
+    {
+      key: 'last7days',
+      label: 'Last 7 days',
+      getValue: () => {
+        const last7Days = new Date(today)
+        last7Days.setDate(today.getDate() - 6)
+        return [formatDate(last7Days), formatDate(today)]
+      },
+      isVisible: true,
+    },
+    {
+      key: 'last30days',
+      label: 'Last 30 days',
+      getValue: () => {
+        const last30Days = new Date(today)
+        last30Days.setDate(today.getDate() - 29)
+        return [formatDate(last30Days), formatDate(today)]
+      },
+      isVisible: true,
+    },
+    {
+      key: 'thismonth',
+      label: 'This month',
+      getValue: () => {
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+        return [formatDate(startOfMonth), formatDate(today)]
+      },
+      isVisible: true,
+    },
+    {
+      key: 'last180days',
+      label: '6 months',
+      getValue: () => {
+        const last180Days = new Date(today)
+        last180Days.setDate(today.getDate() - 179)
+        return [formatDate(last180Days), formatDate(today)]
+      },
+      isVisible: false,
+    },
+  ].filter((option) => option.isVisible !== false)
 })
 
 // Helper Functions
