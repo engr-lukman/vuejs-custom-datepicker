@@ -27,33 +27,39 @@
       </svg>
     </div>
 
-    <!-- Dropdown -->
+    <!-- Dropdown Panel -->
     <div
       v-if="isOpen"
       ref="dropdown"
+      role="dialog"
+      aria-modal="false"
+      aria-label="Date picker"
       class="absolute top-full left-0 z-50 mt-1 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white shadow-lg"
       :class="showQuickSelection ? 'w-md' : 'w-xs'"
     >
       <div class="flex">
-        <!-- Quick Selection Sidebar (only for date range picker) -->
+        <!-- Quick Selection Sidebar -->
         <div
           v-if="showQuickSelection"
-          class="w-36 border-r border-gray-100 bg-gradient-to-b from-gray-50 to-gray-100 shadow-sm"
+          class="w-36 border-r border-gray-100 bg-gradient-to-b from-gray-50 to-gray-100"
+          role="region"
+          aria-label="Quick date selection options"
         >
           <div class="p-2">
             <div
-              class="bg-primary-100 text-primary-700 mb-2 rounded px-2 py-1 text-xs font-medium tracking-wide shadow-sm"
+              class="bg-primary-100 text-primary-700 mb-2 rounded px-2 py-1 text-xs font-medium tracking-wide"
             >
               Quick Select
             </div>
-            <div class="space-y-1">
+            <div class="space-y-1" role="group" aria-label="Quick selection buttons">
               <button
                 v-for="option in quickSelectionOptions"
                 :key="option.key"
-                @click="!option.disabled && handleQuickSelection(option)"
-                :disabled="option.disabled"
+                type="button"
+                @click="handleQuickSelection(option)"
                 :class="getQuickSelectionClasses(option)"
-                class="hover:bg-primary-100 w-full cursor-pointer rounded px-2 py-1.5 text-left text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+                :aria-label="`Select ${option.label}`"
+                class="hover:bg-primary-100 w-full cursor-pointer rounded px-2 py-1.5 text-left text-xs transition-colors"
               >
                 {{ option.label }}
               </button>
@@ -63,14 +69,22 @@
 
         <!-- Main Calendar Content -->
         <div class="flex-1">
-          <!-- Header -->
+          <!-- Calendar Header -->
           <div class="flex items-center justify-between border-b border-gray-100 p-3">
             <button
+              type="button"
               @click="navigatePrevious"
               :disabled="!canNavigatePrevious"
-              class="cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              :aria-label="`Go to ${isMonthView ? 'previous year' : 'previous month'}`"
+              class="focus:ring-primary-500 cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -80,16 +94,24 @@
               </svg>
             </button>
 
-            <h2 class="text-sm font-medium text-gray-900">
+            <h2 class="text-sm font-medium text-gray-900" aria-live="polite">
               {{ isMonthView ? displayYear : `${displayMonth} ${displayYear}` }}
             </h2>
 
             <button
+              type="button"
               @click="navigateNext"
               :disabled="!canNavigateNext"
-              class="cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              :aria-label="`Go to ${isMonthView ? 'next year' : 'next month'}`"
+              class="focus:ring-primary-500 cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -167,7 +189,6 @@ interface DatePickerProps {
   modelValue?: (string | null)[] | null
   placeholder?: string
   view?: 'date' | 'month'
-  range?: boolean // keep for backward compatibility, always true for range selection
   minDate?: string | null
   maxDate?: string | null
 }
@@ -193,8 +214,7 @@ interface MonthData {
 interface QuickSelectionOption {
   key: string
   label: string
-  getValue: () => string | string[]
-  disabled?: boolean
+  getValue: () => string[]
 }
 
 // Constants
@@ -214,15 +234,14 @@ const MONTH_NAMES = [
   'December',
 ]
 
-// Utility Functions
+// Utility Functions with improved error handling
 const isToday = (date: Date): boolean => {
   try {
     const today = new Date()
-    return (
-      date.getFullYear() === today.getFullYear() &&
-      date.getMonth() === today.getMonth() &&
-      date.getDate() === today.getDate()
-    )
+    today.setHours(0, 0, 0, 0)
+    const compareDate = new Date(date)
+    compareDate.setHours(0, 0, 0, 0)
+    return compareDate.getTime() === today.getTime()
   } catch {
     return false
   }
@@ -239,7 +258,10 @@ const isCurrentMonth = (year: number, month: number): boolean => {
 
 const formatDate = (date: Date): string => {
   try {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   } catch {
     return ''
   }
@@ -247,7 +269,10 @@ const formatDate = (date: Date): string => {
 
 const formatDateForDisplay = (date: Date): string => {
   try {
-    return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = date.getFullYear()
+    return `${day}/${month}/${year}`
   } catch {
     return ''
   }
@@ -265,13 +290,12 @@ const formatMonth = (year: number, month: number): string => {
 const props = withDefaults(defineProps<DatePickerProps>(), {
   placeholder: 'Select date range',
   view: 'date',
-  range: true,
   minDate: null,
   maxDate: null,
 })
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string | (string | null)[] | null]
+  'update:modelValue': [value: (string | null)[] | null]
   'date-selected': [date: Date]
   'range-selected': [range: { start: Date; end: Date }]
   'month-selected': [date: Date]
@@ -283,110 +307,99 @@ const inputElement = ref<HTMLInputElement | null>(null)
 const dropdown = ref<HTMLElement | null>(null)
 const isOpen = ref(false)
 const currentDate = ref(new Date())
-const selectedDate = ref<Date | null>(null)
 const selectedRange = ref<{ start: Date | null; end: Date | null }>({ start: null, end: null })
-const rangeStart = ref<Date | null>(null)
 
 // Computed Properties
-const actualMode = computed(() => 'range') // Always range mode now
 const isMonthView = computed(() => props.view === 'month')
 
 const displayMonth = computed(() => MONTH_NAMES[currentDate.value.getMonth()])
 const displayYear = computed(() => currentDate.value.getFullYear())
 
 const canNavigatePrevious = computed(() => {
-  if (!props.minDate) return false
+  if (!props.minDate) return true
+
+  const currentYear = currentDate.value.getFullYear()
+  const currentMonth = currentDate.value.getMonth()
 
   if (isMonthView.value) {
     // For month view: check if we can navigate to previous year
-    const prevYear = currentDate.value.getFullYear() - 1
+    const prevYear = currentYear - 1
 
-    // Parse minDate to get minimum allowed year/month
-    let minYear: number
-    if (props.minDate.length === 7) {
-      // YYYY-MM format
-      const [year] = props.minDate.split('-').map(Number)
-      minYear = year
-    } else {
-      // YYYY-MM-DD format
-      const minDateObj = new Date(props.minDate)
-      minYear = minDateObj.getFullYear()
-    }
+    // Parse minDate to get minimum allowed year
+    const minYear =
+      props.minDate.length === 7
+        ? parseInt(props.minDate.split('-')[0])
+        : new Date(props.minDate).getFullYear()
 
     return prevYear >= minYear
   } else {
     // For date view: check if we can navigate to previous month
+    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1
+    const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear
+
     const minDate = new Date(props.minDate)
-    const lastDayOfPrevMonth = new Date(
-      currentDate.value.getFullYear(),
-      currentDate.value.getMonth(),
-      0
-    )
-    return lastDayOfPrevMonth >= minDate
+    const minYear = minDate.getFullYear()
+    const minMonth = minDate.getMonth()
+
+    return prevYear > minYear || (prevYear === minYear && prevMonth >= minMonth)
   }
 })
 
 const canNavigateNext = computed(() => {
-  if (!props.maxDate) return false
+  if (!props.maxDate) return true
+
+  const currentYear = currentDate.value.getFullYear()
+  const currentMonth = currentDate.value.getMonth()
 
   if (isMonthView.value) {
     // For month view: check if we can navigate to next year
-    const nextYear = currentDate.value.getFullYear() + 1
+    const nextYear = currentYear + 1
 
-    // Parse maxDate to get maximum allowed year/month
-    let maxYear: number
-    if (props.maxDate.length === 7) {
-      // YYYY-MM format
-      const [year] = props.maxDate.split('-').map(Number)
-      maxYear = year
-    } else {
-      // YYYY-MM-DD format
-      const maxDateObj = new Date(props.maxDate)
-      maxYear = maxDateObj.getFullYear()
-    }
+    // Parse maxDate to get maximum allowed year
+    const maxYear =
+      props.maxDate.length === 7
+        ? parseInt(props.maxDate.split('-')[0])
+        : new Date(props.maxDate).getFullYear()
 
     return nextYear <= maxYear
   } else {
     // For date view: check if we can navigate to next month
+    const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1
+    const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear
+
     const maxDate = new Date(props.maxDate)
-    const firstDayOfNextMonth = new Date(
-      currentDate.value.getFullYear(),
-      currentDate.value.getMonth() + 1,
-      1
-    )
-    return firstDayOfNextMonth <= new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 1)
+    const maxYear = maxDate.getFullYear()
+    const maxMonth = maxDate.getMonth()
+
+    return nextYear < maxYear || (nextYear === maxYear && nextMonth <= maxMonth)
   }
 })
 
 const displayValue = computed(() => {
   if (isMonthView.value) {
-    if (actualMode.value === 'range') {
-      if (selectedRange.value?.start && selectedRange.value?.end) {
-        return `${formatMonthForDisplay(selectedRange.value.start)} - ${formatMonthForDisplay(selectedRange.value.end)}`
-      } else if (selectedRange.value?.start) {
-        return formatMonthForDisplay(selectedRange.value.start)
-      }
-      return ''
-    } else {
-      return selectedDate.value ? formatMonthForDisplay(selectedDate.value) : ''
+    // Month view - always range mode
+    if (selectedRange.value?.start && selectedRange.value?.end) {
+      return `${formatMonthForDisplay(selectedRange.value.start)} - ${formatMonthForDisplay(selectedRange.value.end)}`
+    } else if (selectedRange.value?.start) {
+      return formatMonthForDisplay(selectedRange.value.start)
     }
+    return ''
   } else {
-    if (actualMode.value === 'range') {
-      if (selectedRange.value?.start && selectedRange.value?.end) {
-        return `${formatDateForDisplay(selectedRange.value.start)} - ${formatDateForDisplay(selectedRange.value.end)}`
-      } else if (selectedRange.value?.start) {
-        return formatDateForDisplay(selectedRange.value.start)
-      }
-      return ''
-    } else {
-      return selectedDate.value ? formatDateForDisplay(selectedDate.value) : ''
+    // Date view - always range mode
+    if (selectedRange.value?.start && selectedRange.value?.end) {
+      return `${formatDateForDisplay(selectedRange.value.start)} - ${formatDateForDisplay(selectedRange.value.end)}`
+    } else if (selectedRange.value?.start) {
+      return formatDateForDisplay(selectedRange.value.start)
     }
+    return ''
   }
 })
 
 const calendarDays = computed((): DayData[] => {
   const year = currentDate.value.getFullYear()
   const month = currentDate.value.getMonth()
+
+  // Get first and last day of current month
   const firstDay = new Date(year, month, 1)
   const lastDay = new Date(year, month + 1, 0)
   const firstDayOfWeek = firstDay.getDay()
@@ -394,10 +407,10 @@ const calendarDays = computed((): DayData[] => {
 
   const days: DayData[] = []
 
-  // Previous month days
-  const prevMonth = new Date(year, month - 1, 0)
+  // Add previous month days to fill the first week
+  const prevMonthLastDay = new Date(year, month, 0).getDate()
   for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-    const day = prevMonth.getDate() - i
+    const day = prevMonthLastDay - i
     const date = new Date(year, month - 1, day)
     days.push({
       date,
@@ -410,7 +423,7 @@ const calendarDays = computed((): DayData[] => {
     })
   }
 
-  // Current month days
+  // Add current month days
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day)
     days.push({
@@ -424,9 +437,9 @@ const calendarDays = computed((): DayData[] => {
     })
   }
 
-  // Next month days
-  const remainingDays = 42 - days.length
-  for (let day = 1; day <= remainingDays; day++) {
+  // Add next month days to fill remaining slots (ensuring 6 weeks = 42 days)
+  const remainingSlots = 42 - days.length
+  for (let day = 1; day <= remainingSlots; day++) {
     const date = new Date(year, month + 1, day)
     days.push({
       date,
@@ -453,75 +466,55 @@ const monthGrid = computed((): MonthData[] => {
 })
 
 const showQuickSelection = computed(() => {
-  return !isMonthView.value // Show quick selection for date view only
+  // Always show quick selection for date view
+  return !isMonthView.value
 })
 
 const quickSelectionOptions = computed((): QuickSelectionOption[] => {
-  if (!props.minDate || !props.maxDate) return []
-
-  const minDate = new Date(props.minDate)
-  const maxDate = new Date(props.maxDate)
   const today = new Date()
 
   const options: QuickSelectionOption[] = []
 
-  // Helper to check if a date range is valid
-  const isRangeValid = (startDate: Date, endDate: Date): boolean => {
-    return startDate >= minDate && endDate <= maxDate
-  }
-
   // Today
-  if (isRangeValid(today, today)) {
-    options.push({
-      key: 'today',
-      label: 'Today',
-      getValue: () => [formatDate(today), formatDate(today)],
-      disabled: false,
-    })
-  }
+  options.push({
+    key: 'today',
+    label: 'Today',
+    getValue: () => [formatDate(today), formatDate(today)],
+  })
 
   // Yesterday
   const yesterday = new Date(today)
   yesterday.setDate(today.getDate() - 1)
-  if (isRangeValid(yesterday, yesterday)) {
-    options.push({
-      key: 'yesterday',
-      label: 'Yesterday',
-      getValue: () => [formatDate(yesterday), formatDate(yesterday)],
-      disabled: false,
-    })
-  }
+  options.push({
+    key: 'yesterday',
+    label: 'Yesterday',
+    getValue: () => [formatDate(yesterday), formatDate(yesterday)],
+  })
 
   // Last 30 days
   const last30Days = new Date(today)
   last30Days.setDate(today.getDate() - 29)
-  const isLast30Valid = isRangeValid(last30Days, today)
   options.push({
     key: 'last30days',
     label: 'Last 30 days',
     getValue: () => [formatDate(last30Days), formatDate(today)],
-    disabled: !isLast30Valid,
   })
 
   // This month
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-  const isThisMonthValid = isRangeValid(startOfMonth, today)
   options.push({
     key: 'thismonth',
     label: 'This month',
     getValue: () => [formatDate(startOfMonth), formatDate(today)],
-    disabled: !isThisMonthValid,
   })
 
-  // Last 180 days
+  // 6 months (180 days)
   const last180Days = new Date(today)
   last180Days.setDate(today.getDate() - 179)
-  const isLast180Valid = isRangeValid(last180Days, today)
   options.push({
     key: 'last180days',
-    label: '180 days',
+    label: '6 month',
     getValue: () => [formatDate(last180Days), formatDate(today)],
-    disabled: !isLast180Valid,
   })
 
   return options
@@ -545,54 +538,62 @@ const isSameDay = (date1: Date, date2: Date): boolean => {
 }
 
 const isDateSelectable = (date: Date): boolean => {
-  if (!props.minDate || !props.maxDate) return false
+  // Allow all dates if no constraints are set
+  if (!props.minDate && !props.maxDate) return true
 
   const checkDate = new Date(date)
   checkDate.setHours(0, 0, 0, 0) // Reset time to start of day
 
-  const minDate = new Date(props.minDate)
-  minDate.setHours(0, 0, 0, 0)
+  let isValid = true
 
-  const maxDate = new Date(props.maxDate)
-  maxDate.setHours(0, 0, 0, 0)
+  if (props.minDate) {
+    const minDate = new Date(props.minDate)
+    minDate.setHours(0, 0, 0, 0)
+    isValid = isValid && checkDate >= minDate
+  }
 
-  return checkDate >= minDate && checkDate <= maxDate
+  if (props.maxDate) {
+    const maxDate = new Date(props.maxDate)
+    maxDate.setHours(0, 0, 0, 0)
+    isValid = isValid && checkDate <= maxDate
+  }
+
+  return isValid
 }
 
 const isMonthSelectable = (year: number, month: number): boolean => {
-  if (!props.minDate || !props.maxDate) return false
+  // Allow all months if no constraints are set
+  if (!props.minDate && !props.maxDate) return true
 
-  // Create date for the month being checked
+  // Create date for the month being checked (first day of month)
   const checkDate = new Date(year, month, 1)
 
-  // Parse min and max dates - could be YYYY-MM or YYYY-MM-DD format
-  const minDateStr = props.minDate
-  const maxDateStr = props.maxDate
-
-  let minDate: Date
-  let maxDate: Date
-
-  if (minDateStr.length === 7) {
-    // YYYY-MM format
-    const [minYear, minMonth] = minDateStr.split('-').map(Number)
-    minDate = new Date(minYear, minMonth - 1, 1)
-  } else {
-    // YYYY-MM-DD format
-    const minDateObj = new Date(minDateStr)
-    minDate = new Date(minDateObj.getFullYear(), minDateObj.getMonth(), 1)
+  // Parse min and max dates
+  const parseDate = (dateStr: string): Date => {
+    if (dateStr.length === 7) {
+      // YYYY-MM format
+      const [year, month] = dateStr.split('-').map(Number)
+      return new Date(year, month - 1, 1)
+    } else {
+      // YYYY-MM-DD format - use first day of that month
+      const dateObj = new Date(dateStr)
+      return new Date(dateObj.getFullYear(), dateObj.getMonth(), 1)
+    }
   }
 
-  if (maxDateStr.length === 7) {
-    // YYYY-MM format
-    const [maxYear, maxMonth] = maxDateStr.split('-').map(Number)
-    maxDate = new Date(maxYear, maxMonth - 1, 1)
-  } else {
-    // YYYY-MM-DD format
-    const maxDateObj = new Date(maxDateStr)
-    maxDate = new Date(maxDateObj.getFullYear(), maxDateObj.getMonth(), 1)
+  let isValid = true
+
+  if (props.minDate) {
+    const minDate = parseDate(props.minDate)
+    isValid = isValid && checkDate >= minDate
   }
 
-  return checkDate >= minDate && checkDate <= maxDate
+  if (props.maxDate) {
+    const maxDate = parseDate(props.maxDate)
+    isValid = isValid && checkDate <= maxDate
+  }
+
+  return isValid
 }
 
 const isDateInSelectedRange = (date: Date): boolean => {
@@ -611,23 +612,25 @@ const isRangeEnd = (date: Date): boolean => {
 const getDayClasses = (dayData: DayData): string => {
   const classes = []
 
-  if (!dayData.isCurrentMonth) {
+  // Handle non-current month days and non-selectable dates
+  if (!dayData.isCurrentMonth || !isDateSelectable(dayData.date)) {
     classes.push('text-gray-400 cursor-not-allowed')
-  } else if (!isDateSelectable(dayData.date)) {
-    classes.push('text-gray-400 cursor-not-allowed')
-  } else {
-    classes.push('text-gray-900 hover:bg-gray-100')
+    return classes.join(' ')
+  }
 
-    if (dayData.isToday) {
-      classes.push('bg-primary-100 border border-primary-300')
-    }
+  // Base classes for selectable dates
+  classes.push('text-gray-900 hover:bg-gray-100')
 
-    // Always handle as range mode
-    if (isRangeStart(dayData.date) || isRangeEnd(dayData.date)) {
-      classes.push('bg-primary-700 text-white')
-    } else if (isDateInSelectedRange(dayData.date)) {
-      classes.push('bg-primary-300 text-white')
-    }
+  // Today indicator
+  if (dayData.isToday) {
+    classes.push('bg-primary-100 border border-primary-300')
+  }
+
+  // Range selection styling
+  if (isRangeStart(dayData.date) || isRangeEnd(dayData.date)) {
+    classes.push('bg-primary-700 text-white')
+  } else if (isDateInSelectedRange(dayData.date)) {
+    classes.push('bg-primary-300 text-white')
   }
 
   return classes.join(' ')
@@ -657,23 +660,23 @@ const getMonthClasses = (monthData: MonthData): string => {
 }
 
 const isMonthSelected = (monthString: string): boolean => {
-  const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
-  return values.some((v) => v === monthString)
+  const values = Array.isArray(props.modelValue) ? props.modelValue : []
+  return values.includes(monthString)
 }
 
 const isMonthInSelectedRange = (monthString: string): boolean => {
-  const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
-  if (!values[0] || !values[1]) return false
+  const values = Array.isArray(props.modelValue) ? props.modelValue : []
+  if (values.length < 2 || !values[0] || !values[1]) return false
   return monthString > values[0] && monthString < values[1]
 }
 
 const isMonthRangeStart = (monthString: string): boolean => {
-  const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
+  const values = Array.isArray(props.modelValue) ? props.modelValue : []
   return values[0] === monthString
 }
 
 const isMonthRangeEnd = (monthString: string): boolean => {
-  const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
+  const values = Array.isArray(props.modelValue) ? props.modelValue : []
   return values[1] === monthString
 }
 
@@ -681,11 +684,12 @@ const isMonthRangeEnd = (monthString: string): boolean => {
 const handleDateClick = (date: Date): void => {
   if (!isDateSelectable(date)) return
 
-  // Always handle as range selection
+  // Range selection logic
   if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
+    // Start new range
     selectedRange.value = { start: date, end: null }
-    rangeStart.value = date
   } else if (selectedRange.value?.start && !selectedRange.value?.end) {
+    // Complete the range
     if (date >= selectedRange.value.start) {
       selectedRange.value.end = date
       emit('range-selected', { start: selectedRange.value.start, end: selectedRange.value.end })
@@ -695,8 +699,8 @@ const handleDateClick = (date: Date): void => {
       ])
       isOpen.value = false
     } else {
+      // Start new range if selected date is before start
       selectedRange.value = { start: date, end: null }
-      rangeStart.value = date
     }
   }
 }
@@ -706,11 +710,12 @@ const handleMonthClick = (monthData: MonthData): void => {
 
   const selectedMonth = new Date(displayYear.value, monthData.month, 1)
 
-  // Always handle as range selection
+  // Range selection logic for months
   if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
+    // Start new range
     selectedRange.value = { start: selectedMonth, end: null }
-    rangeStart.value = selectedMonth
   } else if (selectedRange.value?.start && !selectedRange.value?.end) {
+    // Complete the range
     if (selectedMonth >= selectedRange.value.start) {
       selectedRange.value.end = selectedMonth
       emit('month-range-selected', {
@@ -723,46 +728,37 @@ const handleMonthClick = (monthData: MonthData): void => {
       ])
       isOpen.value = false
     } else {
+      // Start new range if selected month is before start
       selectedRange.value = { start: selectedMonth, end: null }
-      rangeStart.value = selectedMonth
     }
   }
 }
 
 const clearSelection = (): void => {
   selectedRange.value = { start: null, end: null }
-  rangeStart.value = null
   emit('update:modelValue', null)
   isOpen.value = false
 }
 
 const handleQuickSelection = (option: QuickSelectionOption): void => {
-  if (option.disabled) return
-
   const value = option.getValue()
-  // Always handle as range selection
-  if (Array.isArray(value)) {
-    const startDate = new Date(value[0])
-    const endDate = new Date(value[1])
-    selectedRange.value = { start: startDate, end: endDate }
-    emit('range-selected', { start: startDate, end: endDate })
-    emit('update:modelValue', value)
-  }
+  const startDate = new Date(value[0])
+  const endDate = new Date(value[1])
+
+  selectedRange.value = { start: startDate, end: endDate }
+  emit('range-selected', { start: startDate, end: endDate })
+  emit('update:modelValue', value)
+
   // Auto-close after quick selection
   isOpen.value = false
 }
 
 const getQuickSelectionClasses = (option: QuickSelectionOption): string => {
-  if (option.disabled) {
-    return 'text-gray-400 cursor-not-allowed'
-  }
-
   const value = option.getValue()
   const currentValue = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
 
   // Check if the option's value matches current selection
-  const isSelected =
-    Array.isArray(value) && currentValue[0] === value[0] && currentValue[1] === value[1]
+  const isSelected = currentValue[0] === value[0] && currentValue[1] === value[1]
 
   return isSelected
     ? 'bg-primary-700 text-white font-medium shadow-sm'
@@ -806,34 +802,55 @@ const navigateNext = (): void => {
 }
 
 const handleClickOutside = (event: Event): void => {
+  const target = event.target as Node
   if (
     dropdown.value &&
-    !dropdown.value.contains(event.target as Node) &&
+    !dropdown.value.contains(target) &&
     inputElement.value &&
-    !inputElement.value.contains(event.target as Node)
+    !inputElement.value.contains(target)
   ) {
-    isOpen.value = false
+    closePicker()
   }
 }
 
-// Watchers
+const handleKeyDown = (event: KeyboardEvent): void => {
+  if (!isOpen.value) return
+
+  switch (event.key) {
+    case 'Escape':
+      event.preventDefault()
+      closePicker()
+      break
+    case 'Tab':
+      // Allow normal tab behavior to close picker when focus leaves
+      if (!dropdown.value?.contains(event.target as Node)) {
+        closePicker()
+      }
+      break
+  }
+}
+
+// Optimized watcher with better performance
 watch(
   () => props.modelValue,
   (newValue) => {
-    if (Array.isArray(newValue)) {
-      if (isMonthView.value) {
+    if (!newValue || !Array.isArray(newValue)) {
+      selectedRange.value = { start: null, end: null }
+      return
+    }
+
+    if (newValue.length >= 2) {
+      try {
+        const dateFormat = isMonthView.value ? '-01' : ''
         selectedRange.value = {
-          start: newValue[0] ? new Date(newValue[0] + '-01') : null,
-          end: newValue[1] ? new Date(newValue[1] + '-01') : null,
+          start: newValue[0] ? new Date(newValue[0] + dateFormat) : null,
+          end: newValue[1] ? new Date(newValue[1] + dateFormat) : null,
         }
-      } else {
-        selectedRange.value = {
-          start: newValue[0] ? new Date(newValue[0]) : null,
-          end: newValue[1] ? new Date(newValue[1]) : null,
-        }
+      } catch {
+        // Reset on invalid date format
+        selectedRange.value = { start: null, end: null }
       }
     } else {
-      // Reset to empty range if not array
       selectedRange.value = { start: null, end: null }
     }
   },
@@ -843,9 +860,11 @@ watch(
 // Lifecycle
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  document.addEventListener('keydown', handleKeyDown)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('keydown', handleKeyDown)
 })
 </script>

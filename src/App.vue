@@ -19,7 +19,6 @@
           </header>
           <DatePicker
             v-model="selectedOneMonthDateRange"
-            range
             placeholder="Select date range"
             :min-date="datePickerConfigurations.oneMonth.minDate"
             :max-date="datePickerConfigurations.oneMonth.maxDate"
@@ -48,7 +47,6 @@
           <DatePicker
             v-model="selectedSingleMonthRange"
             view="month"
-            range
             placeholder="Select month"
             :min-date="datePickerConfigurations.singleMonthSelection.minDate"
             :max-date="datePickerConfigurations.singleMonthSelection.maxDate"
@@ -74,7 +72,6 @@
           </header>
           <DatePicker
             v-model="selectedTwoMonthDateRange"
-            range
             placeholder="Select date range"
             :min-date="datePickerConfigurations.twoMonths.minDate"
             :max-date="datePickerConfigurations.twoMonths.maxDate"
@@ -101,7 +98,6 @@
           <DatePicker
             v-model="selectedTwoMonthRange"
             view="month"
-            range
             placeholder="Select month range"
             :min-date="datePickerConfigurations.twoMonthRange.minDate"
             :max-date="datePickerConfigurations.twoMonthRange.maxDate"
@@ -127,7 +123,6 @@
           </header>
           <DatePicker
             v-model="selectedSixMonthDateRange"
-            range
             placeholder="Select date range"
             :min-date="datePickerConfigurations.sixMonths.minDate"
             :max-date="datePickerConfigurations.sixMonths.maxDate"
@@ -154,7 +149,6 @@
           <DatePicker
             v-model="selectedSixMonthRange"
             view="month"
-            range
             placeholder="Select month range"
             :min-date="datePickerConfigurations.sixMonthRange.minDate"
             :max-date="datePickerConfigurations.sixMonthRange.maxDate"
