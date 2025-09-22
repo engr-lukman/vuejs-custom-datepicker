@@ -35,7 +35,7 @@
       :class="showQuickSelection ? 'w-96' : 'w-80'"
     >
       <div class="flex">
-        <!-- Quick Selection Sidebar (only for date view and range mode) -->
+        <!-- Quick Selection Sidebar (always visible for range mode) -->
         <div v-if="showQuickSelection" class="w-36 border-r border-gray-100 bg-gray-50">
           <div class="p-2">
             <div class="mb-2 text-xs font-medium tracking-wide text-gray-600 uppercase">
@@ -47,7 +47,7 @@
                 :key="option.key"
                 @click="handleQuickSelection(option)"
                 :class="getQuickSelectionClasses(option)"
-                class="hover:bg-primary-100 w-full rounded px-2 py-1.5 text-left text-xs transition-colors"
+                class="hover:bg-primary-100 w-full cursor-pointer rounded px-2 py-1.5 text-left text-xs transition-colors"
               >
                 {{ option.label }}
               </button>
@@ -139,22 +139,7 @@
           </div>
 
           <!-- Footer -->
-          <div class="flex justify-between border-t border-gray-100 p-3">
-            <div class="flex items-center space-x-2">
-              <svg
-                class="h-4 w-4 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
+          <div class="flex justify-end border-t border-gray-100 p-3">
             <div class="flex space-x-2">
               <button
                 @click="clearSelection"
@@ -472,7 +457,7 @@ const monthGrid = computed((): MonthData[] => {
 })
 
 const showQuickSelection = computed(() => {
-  return !isMonthView.value && actualMode.value === 'range'
+  return actualMode.value === 'range'
 })
 
 const quickSelectionOptions = computed((): QuickSelectionOption[] => {
@@ -792,7 +777,9 @@ const getQuickSelectionClasses = (option: QuickSelectionOption): string => {
     ? props.modelValue[0] === value[0] && props.modelValue[1] === value[1]
     : props.modelValue === value
 
-  return isSelected ? 'bg-primary-700 text-white font-medium' : 'text-gray-700 hover:bg-primary-100'
+  return isSelected
+    ? 'bg-primary-700 text-white font-medium shadow-sm'
+    : 'text-gray-700 hover:bg-primary-100 hover:text-primary-700'
 }
 
 const confirmSelection = (): void => {
