@@ -35,10 +35,15 @@
       :class="showQuickSelection ? 'w-96' : 'w-80'"
     >
       <div class="flex">
-        <!-- Quick Selection Sidebar (always visible for range mode) -->
-        <div v-if="showQuickSelection" class="w-36 border-r border-gray-100 bg-gray-50">
+        <!-- Quick Selection Sidebar (only for date range picker) -->
+        <div
+          v-if="showQuickSelection"
+          class="w-36 border-r border-gray-100 bg-gradient-to-b from-gray-50 to-gray-100 shadow-sm"
+        >
           <div class="p-2">
-            <div class="mb-2 text-xs font-medium tracking-wide text-gray-600 uppercase">
+            <div
+              class="bg-primary-100 text-primary-700 mb-2 rounded px-2 py-1 text-xs font-medium tracking-wide uppercase shadow-sm"
+            >
               Quick Select
             </div>
             <div class="space-y-1">
@@ -140,21 +145,12 @@
 
           <!-- Footer -->
           <div class="flex justify-end border-t border-gray-100 p-3">
-            <div class="flex space-x-2">
-              <button
-                @click="clearSelection"
-                class="rounded bg-gray-100 px-3 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-              <button
-                v-if="hasValidSelection"
-                @click="confirmSelection"
-                class="bg-primary-700 hover:bg-primary-800 rounded px-3 py-1 text-sm text-white transition-colors"
-              >
-                Select
-              </button>
-            </div>
+            <button
+              @click="clearSelection"
+              class="rounded bg-gray-100 px-3 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-200"
+            >
+              Clear
+            </button>
           </div>
         </div>
       </div>
@@ -457,7 +453,7 @@ const monthGrid = computed((): MonthData[] => {
 })
 
 const showQuickSelection = computed(() => {
-  return actualMode.value === 'range'
+  return !isMonthView.value && actualMode.value === 'range'
 })
 
 const quickSelectionOptions = computed((): QuickSelectionOption[] => {
@@ -507,14 +503,6 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
       getValue: () => [formatDate(last180Days), formatDate(today)],
     },
   ]
-})
-
-const hasValidSelection = computed(() => {
-  if (actualMode.value === 'range') {
-    return selectedRange.value.start && selectedRange.value.end
-  } else {
-    return selectedDate.value !== null
-  }
 })
 
 // Helper Functions
@@ -769,6 +757,8 @@ const handleQuickSelection = (option: QuickSelectionOption): void => {
     emit('date-selected', date)
     emit('update:modelValue', value)
   }
+  // Auto-close after quick selection
+  isOpen.value = false
 }
 
 const getQuickSelectionClasses = (option: QuickSelectionOption): string => {
@@ -780,10 +770,6 @@ const getQuickSelectionClasses = (option: QuickSelectionOption): string => {
   return isSelected
     ? 'bg-primary-700 text-white font-medium shadow-sm'
     : 'text-gray-700 hover:bg-primary-100 hover:text-primary-700'
-}
-
-const confirmSelection = (): void => {
-  isOpen.value = false
 }
 
 const togglePicker = (): void => {

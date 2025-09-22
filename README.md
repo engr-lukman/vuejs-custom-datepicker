@@ -1,239 +1,265 @@
-# Vue 3 Custom DateP## Features
+# Vue.js Custom DatePicker
 
-### DatePicker Component
-
-- ✅ **Single Date Selection** - Pick individual dates with Today button
-- ✅ **Date Range Selection** - Select start and end dates
-- ✅ **Date Format** - Display dates in dd/mm/yyyy format
-- ✅ **Date Validation** - Configurable min/max date ranges (default: last 180 days to today)
-- ✅ **Today Highlighting** - Current date highlighted with yellow border
-
-### MonthPicker Component
-
-- ✅ **Single Month Selection** - Pick individual months
-- ✅ **Month Range Selection** - Select start and end months
-- ✅ **Current Month Highlighting** - Current month highlighted like today's date
-- ✅ **Month Format** - Display months in Mon YYYY format (e.g., Sep 2025)
-
-### Shared Features
-
-- ✅ **Accessibility** - Full keyboard navigation and ARIA support
-- ✅ **Mobile Responsive** - Touch-friendly interface with pointer cursors
-- ✅ **TypeScript** - Full type safety with shared composables
-- ✅ **Custom Styling** - Different colors for different selection statesnthPicker
-
-A clean, reusable, and highly customizable date and month picker component library built with Vue 3, TypeScript, and Tailwind CSS v4.
-
-## Components
-
-### 📅 **DatePicker**
-
-- Single date selection with Today button
-- Date range selection
-- dd/mm/yyyy display format
-- Date validation (configurable range)
-
-### 📆 **MonthPicker**
-
-- Single month selection
-- Month range selection
-- Current month highlighting (like today highlighting)
-- Month/Year format display
+A comprehensive Vue.js date picker component with advanced features, strict validation, and Tailwind CSS styling.
 
 ## Features
 
-## Architecture
+### Core Functionality
 
-The component library is built with a clean, modular architecture:
+- **Single Date Selection**: Pick individual dates with 180-day validation
+- **Date Range Selection**: Select date ranges with smart validation
+- **Month Selection**: Single month and month range selection
+- **Quick Selection Sidebar**: Preset date ranges (Today, Yesterday, Last 7/30/90 days)
+- **Auto-close Behavior**: Automatically closes after quick selection
 
-### Components
+### Validation & Navigation
 
-- **DatePicker.vue** - Handles single date and date range selection
-- **MonthPicker.vue** - Handles single month and month range selection
+- **180-Day Range Limit**: Restricts selections to current date + previous 179 days
+- **Smart Month Validation**: Allows current month + previous 5 months only
+- **Strict Navigation Controls**: Prevents navigation to invalid date ranges
+- **Real-time Validation**: Instant feedback on invalid selections
 
-### Shared Composables
+### UI/UX Excellence
 
-- **picker-types.ts** - TypeScript interfaces and constants
-- **picker-utils.ts** - Shared utility functions for date operations
+- **Tailwind CSS v4**: Modern utility-first styling with custom primary color (#E54993)
+- **Mobile Responsive**: Optimized for all screen sizes
+- **Gradient Backgrounds**: Beautiful visual enhancements
+- **Hover & Focus States**: Interactive feedback throughout
+- **Accessibility**: Proper ARIA labels and keyboard navigation
 
-### Features by Component
+### Technical Features
 
-#### DatePicker
+- **TypeScript Support**: Full type safety and IntelliSense
+- **Vue 3 Composition API**: Modern reactive architecture
+- **Embedded Types & Utilities**: Self-contained component with no external dependencies
+- **Clean Architecture**: Production-ready code structure
 
-- Single date selection with Today button
-- Date range selection
-- dd/mm/yyyy display format
-- Date validation (configurable min/max ranges)
-
-#### MonthPicker
-
-- Single month selection
-- Month range selection
-- Current month highlighting
-- Mon YYYY display format
-
-## Installation
+## Quick Start
 
 ```bash
 # Install dependencies
-pnpm install
+npm install
 
 # Start development server
-pnpm dev
+npm run dev
 
 # Build for production
-pnpm build
+npm run build
 
-# Type checking
-pnpm type-check
-
-# Linting
-pnpm lint
-
-# Format code
-pnpm format:all
+# Run linting
+npm run lint
 ```
 
-## Usage
+## Usage Examples
 
-### DatePicker Component
+### Basic Single Date Selection
 
 ```vue
 <template>
-  <div>
-    <!-- Single Date Picker -->
-    <DatePicker mode="single" @date-selected="onDateSelected" />
-
-    <!-- Date Range Picker -->
-    <DatePicker mode="range" @range-selected="onRangeSelected" />
-  </div>
+  <DatePicker v-model="selectedDate" mode="single" placeholder="Select a date" />
 </template>
 
 <script setup lang="ts">
-import DatePicker from '@/components/DatePicker.vue'
+import { ref } from 'vue'
+import DatePicker from './components/DatePicker.vue'
 
-const onDateSelected = (date: Date) => {
-  console.log('Selected date:', date)
-}
-
-const onRangeSelected = (range: { start: Date; end: Date }) => {
-  console.log('Selected range:', range)
-}
+const selectedDate = ref<Date | null>(null)
 </script>
 ```
 
-### MonthPicker Component
+### Date Range with Quick Selection
 
 ```vue
 <template>
-  <div>
-    <!-- Single Month Picker -->
-    <MonthPicker mode="single" @month-selected="onMonthSelected" />
-
-    <!-- Month Range Picker -->
-    <MonthPicker mode="range" @month-range-selected="onMonthRangeSelected" />
-  </div>
+  <DatePicker v-model="dateRange" mode="range" placeholder="Select date range" />
 </template>
 
 <script setup lang="ts">
-import MonthPicker from '@/components/MonthPicker.vue'
+import { ref } from 'vue'
+import DatePicker from './components/DatePicker.vue'
 
-const onMonthSelected = (date: Date) => {
-  console.log('Selected month:', date)
-}
-
-const onMonthRangeSelected = (range: { start: Date; end: Date }) => {
-  console.log('Selected month range:', range)
-}
+const dateRange = ref<{ start: Date | null; end: Date | null }>({
+  start: null,
+  end: null,
+})
 </script>
 ```
 
-## Color Scheme
+### Month Selection
 
-The component uses a sophisticated color system:
+```vue
+<template>
+  <DatePicker v-model="selectedMonth" mode="month" placeholder="Select month" />
+</template>
 
-- **Primary Color**: Custom pink (#E54993) for selections and highlights
-- **Today's Date**: Yellow border (`border-today-500`) with light yellow background
-- **Current Month**: Yellow border highlighting in MonthPicker
-- **Range Start/End**: Primary color background with different shades
-- **Dates in Range**: Light blue background (`bg-range-100`) with blue text
-- **Disabled States**: Muted colors with not-allowed cursor
+<script setup lang="ts">
+import { ref } from 'vue'
+import DatePicker from './components/DatePicker.vue'
 
-## Props & Events
+const selectedMonth = ref<Date | null>(null)
+</script>
+```
 
-### DatePicker Props
+### Month Range Selection
 
-- `mode: 'single' | 'range'` - Selection mode
-- `minDate?: Date` - Minimum selectable date
-- `maxDate?: Date` - Maximum selectable date
-- `placeholder?: string` - Input placeholder text
+```vue
+<template>
+  <DatePicker v-model="monthRange" mode="month-range" placeholder="Select month range" />
+</template>
 
-### DatePicker Events
+<script setup lang="ts">
+import { ref } from 'vue'
+import DatePicker from './components/DatePicker.vue'
 
-- `@date-selected(date: Date)` - Emitted when single date is selected
-- `@range-selected(range: {start: Date, end: Date})` - Emitted when date range is selected
+const monthRange = ref<{ start: Date | null; end: Date | null }>({
+  start: null,
+  end: null,
+})
+</script>
+```
 
-### MonthPicker Props
+## Component API
 
-- `mode: 'single' | 'range'` - Selection mode
-- `placeholder?: string` - Input placeholder text
+### Props
 
-### MonthPicker Events
+| Prop          | Type                                              | Default         | Description            |
+| ------------- | ------------------------------------------------- | --------------- | ---------------------- |
+| `modelValue`  | `Date \| DateRange \| null`                       | `null`          | The selected date(s)   |
+| `mode`        | `'single' \| 'range' \| 'month' \| 'month-range'` | `'single'`      | Selection mode         |
+| `placeholder` | `string`                                          | `'Select date'` | Input placeholder text |
+| `disabled`    | `boolean`                                         | `false`         | Disable the component  |
 
-- `@month-selected(date: Date)` - Emitted when single month is selected
-- `@month-range-selected(range: {start: Date, end: Date})` - Emitted when month range is selected
+### Events
 
-| Prop          | Type                                   | Default         | Description             |
-| ------------- | -------------------------------------- | --------------- | ----------------------- |
-| `modelValue`  | `string \| (string \| null)[] \| null` | `null`          | The selected date(s)    |
-| `placeholder` | `string`                               | `'Select date'` | Input placeholder text  |
-| `range`       | `boolean`                              | `false`         | Enable range selection  |
-| `monthPicker` | `boolean`                              | `false`         | Enable month-only mode  |
-| `minDate`     | `string \| null`                       | `null`          | Minimum selectable date |
-| `maxDate`     | `string \| null`                       | `null`          | Maximum selectable date |
+| Event               | Payload                     | Description                    |
+| ------------------- | --------------------------- | ------------------------------ |
+| `update:modelValue` | `Date \| DateRange \| null` | Emitted when selection changes |
 
-## Technical Details
+### Types
 
-### Type Safety
+```typescript
+interface DateRange {
+  start: Date | null
+  end: Date | null
+}
 
-- Full TypeScript implementation with shared interfaces
-- Strict type checking for all props and events
-- Type-safe date operations across components
+type DatePickerMode = 'single' | 'range' | 'month' | 'month-range'
+```
 
-### Architecture Highlights
+## Styling & Theming
 
-- **Separation of Concerns**: DatePicker and MonthPicker as specialized components
-- **Shared Composables**: Common types and utilities in `/composables`
-- **Clean Code**: Optimized computed properties and minimal re-renders
-- **Error Handling**: Graceful handling of invalid dates with try-catch blocks
+The component uses a custom Tailwind CSS configuration with:
 
-### Performance
+- **Primary Color**: `#E54993` (vibrant pink)
+- **Responsive Design**: Mobile-first approach
+- **Custom Components**: Button variants, form controls, and interactive states
+- **Gradient Backgrounds**: Subtle visual enhancements
 
-- Computed properties for efficient reactivity
-- Optimized calendar grid generation
-- Memory leak prevention with proper event cleanup
+### CSS Structure
 
-### Accessibility
+```css
+/* Main theme colors in src/css/main.css */
+:root {
+  --primary: #e54993;
+  --primary-hover: #d63384;
+  --primary-light: #f8d7da;
+}
+```
 
-- ARIA labels and roles for screen readers
-- Full keyboard navigation support
-- Touch-friendly mobile interface
+## Validation Rules
 
-## Development
+### Date Mode (Single & Range)
 
-### Code Quality Tools
+- **180-Day Limit**: Current date + previous 179 days
+- **No Future Dates**: Cannot select dates beyond today
+- **Smart Range Validation**: End date must be after start date
+- **Invalid Date Handling**: Graceful error handling for invalid inputs
 
-- ESLint configuration with Vue 3 + TypeScript rules
-- Prettier formatting with Tailwind CSS class sorting
-- TypeScript strict mode enabled
-- Comprehensive error handling throughout
+### Month Mode (Single & Range)
 
-### Browser Support
+- **6-Month Window**: Current month + previous 5 months
+- **No Future Months**: Cannot select future months
+- **Year Navigation**: Intelligent year navigation based on valid months
 
-- Modern browsers with ES2020+ support
-- Mobile Safari and Chrome optimized
-- Desktop Firefox, Chrome, Safari, Edge
+## Quick Selection Options
+
+The quick selection sidebar (available in date range mode) includes:
+
+- **Today**: Current date range
+- **Yesterday**: Previous day
+- **Last 7 days**: Past week
+- **Last 30 days**: Past month
+- **Last 90 days**: Past quarter
+- **This Month**: Current month's date range
+- **Last Month**: Previous month's date range
+
+## Project Structure
+
+```
+vuejs-custom-datepicker/
+├── src/
+│   ├── components/
+│   │   └── DatePicker.vue      # Main component (853 lines)
+│   ├── css/
+│   │   └── main.css           # Tailwind configuration
+│   ├── App.vue                # Demo application
+│   └── main.ts               # Entry point
+├── public/
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+└── README.md
+```
+
+## Development Scripts
+
+```bash
+# Development
+npm run dev          # Start dev server with hot reload
+npm run build        # Build for production
+npm run preview      # Preview production build
+
+# Code Quality
+npm run lint         # Run ESLint
+npm run lint:fix     # Fix ESLint issues
+npm run type-check   # TypeScript type checking
+
+# Dependencies
+npm install          # Install dependencies
+npm update          # Update dependencies
+```
+
+## Testing & Quality
+
+- **Zero Lint Errors**: Clean codebase with consistent formatting
+- **TypeScript Strict Mode**: Full type safety
+- **Production Ready**: Optimized build with tree-shaking
+- **Performance**: Efficient reactivity with computed properties
+- **Accessibility**: ARIA labels and keyboard support
+
+## Use Cases
+
+- **Financial Applications**: Transaction date selection with historical limits
+- **Reporting Systems**: Date range selection for reports
+- **Booking Systems**: Event date selection with validation
+- **Analytics Dashboards**: Time period selection
+- **Data Entry Forms**: Date input with strict validation
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Ensure all tests pass
+5. Submit a pull request
 
 ## License
 
-MIT License
+MIT License - see LICENSE file for details
+
+## Related
+
+- [Vue 3 Documentation](https://vuejs.org/)
+- [Tailwind CSS v4](https://tailwindcss.com/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)
