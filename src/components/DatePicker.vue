@@ -50,9 +50,10 @@
               <button
                 v-for="option in quickSelectionOptions"
                 :key="option.key"
-                @click="handleQuickSelection(option)"
+                @click="!option.disabled && handleQuickSelection(option)"
+                :disabled="option.disabled"
                 :class="getQuickSelectionClasses(option)"
-                class="hover:bg-primary-100 w-full cursor-pointer rounded px-2 py-1.5 text-left text-xs transition-colors"
+                class="hover:bg-primary-100 w-full cursor-pointer rounded px-2 py-1.5 text-left text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
               >
                 {{ option.label }}
               </button>
@@ -163,11 +164,10 @@ import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 
 // Types
 interface DatePickerProps {
-  modelValue?: string | (string | null)[] | null
+  modelValue?: (string | null)[] | null
   placeholder?: string
-  mode?: 'single' | 'range'
   view?: 'date' | 'month'
-  range?: boolean // backward compatibility
+  range?: boolean // keep for backward compatibility, always true for range selection
   minDate?: string | null
   maxDate?: string | null
 }
@@ -194,6 +194,7 @@ interface QuickSelectionOption {
   key: string
   label: string
   getValue: () => string | string[]
+  disabled?: boolean
 }
 
 // Constants
@@ -262,21 +263,11 @@ const formatMonth = (year: number, month: number): string => {
 
 // Props and Emits
 const props = withDefaults(defineProps<DatePickerProps>(), {
-  placeholder: 'Select date',
-  mode: 'single',
+  placeholder: 'Select date range',
   view: 'date',
-  range: false,
-  minDate: (() => {
-    // Calculate minimum selectable date: 180 days before today (excluding current date)
-    const date = new Date()
-    date.setDate(date.getDate() - 180)
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  })(),
-  maxDate: (() => {
-    // Maximum selectable date is today
-    const date = new Date()
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  })(),
+  range: true,
+  minDate: null,
+  maxDate: null,
 })
 
 const emit = defineEmits<{
@@ -296,42 +287,36 @@ const selectedDate = ref<Date | null>(null)
 const selectedRange = ref<{ start: Date | null; end: Date | null }>({ start: null, end: null })
 const rangeStart = ref<Date | null>(null)
 
-// Shared today variable to avoid creating multiple Date instances
-const today = new Date()
-
 // Computed Properties
-const actualMode = computed(() => (props.range ? 'range' : props.mode))
+const actualMode = computed(() => 'range') // Always range mode now
 const isMonthView = computed(() => props.view === 'month')
 
 const displayMonth = computed(() => MONTH_NAMES[currentDate.value.getMonth()])
 const displayYear = computed(() => currentDate.value.getFullYear())
 
 const canNavigatePrevious = computed(() => {
+  if (!props.minDate) return false
+
   if (isMonthView.value) {
     // For month view: check if we can navigate to previous year
-    // Allow navigation if the previous year contains any of the valid months (current + previous 5)
     const prevYear = currentDate.value.getFullYear() - 1
-    const currentMonth = today.getMonth()
 
-    // Check if previous year has any valid months
-    // Valid months: current month + previous 5 months
-    const minValidMonth = currentMonth - 5
-
-    // If minValidMonth is negative, it means we need to check previous year
-    if (minValidMonth < 0) {
-      // Some valid months are in the previous year
-      return true
+    // Parse minDate to get minimum allowed year/month
+    let minYear: number
+    if (props.minDate.length === 7) {
+      // YYYY-MM format
+      const [year] = props.minDate.split('-').map(Number)
+      minYear = year
     } else {
-      // All valid months are in current year or later
-      return prevYear >= today.getFullYear()
+      // YYYY-MM-DD format
+      const minDateObj = new Date(props.minDate)
+      minYear = minDateObj.getFullYear()
     }
+
+    return prevYear >= minYear
   } else {
     // For date view: check if we can navigate to previous month
-    // Calculate minimum allowed date (180 days before today, excluding current date)
-    const minDate = new Date(today)
-    minDate.setDate(today.getDate() - 180)
-
-    // Allow navigation if the previous month contains any selectable dates
+    const minDate = new Date(props.minDate)
     const lastDayOfPrevMonth = new Date(
       currentDate.value.getFullYear(),
       currentDate.value.getMonth(),
@@ -342,20 +327,34 @@ const canNavigatePrevious = computed(() => {
 })
 
 const canNavigateNext = computed(() => {
+  if (!props.maxDate) return false
+
   if (isMonthView.value) {
     // For month view: check if we can navigate to next year
     const nextYear = currentDate.value.getFullYear() + 1
 
-    // Can navigate to next year only if it contains valid months
-    // Valid months are current month + previous 5 months
-    // Since we only allow past months, we can't navigate to future years
-    return nextYear <= today.getFullYear()
+    // Parse maxDate to get maximum allowed year/month
+    let maxYear: number
+    if (props.maxDate.length === 7) {
+      // YYYY-MM format
+      const [year] = props.maxDate.split('-').map(Number)
+      maxYear = year
+    } else {
+      // YYYY-MM-DD format
+      const maxDateObj = new Date(props.maxDate)
+      maxYear = maxDateObj.getFullYear()
+    }
+
+    return nextYear <= maxYear
   } else {
     // For date view: check if we can navigate to next month
-    const nextMonth = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() + 1, 1)
-
-    // Can navigate to next month only if current date is today or earlier
-    return nextMonth <= new Date(today.getFullYear(), today.getMonth() + 1, 1)
+    const maxDate = new Date(props.maxDate)
+    const firstDayOfNextMonth = new Date(
+      currentDate.value.getFullYear(),
+      currentDate.value.getMonth() + 1,
+      1
+    )
+    return firstDayOfNextMonth <= new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 1)
   }
 })
 
@@ -454,48 +453,78 @@ const monthGrid = computed((): MonthData[] => {
 })
 
 const showQuickSelection = computed(() => {
-  return !isMonthView.value && actualMode.value === 'range'
+  return !isMonthView.value // Show quick selection for date view only
 })
 
 const quickSelectionOptions = computed((): QuickSelectionOption[] => {
-  const yesterday = new Date(today)
-  yesterday.setDate(today.getDate() - 1)
+  if (!props.minDate || !props.maxDate) return []
 
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const minDate = new Date(props.minDate)
+  const maxDate = new Date(props.maxDate)
+  const today = new Date()
 
-  const last30Days = new Date(today)
-  last30Days.setDate(today.getDate() - 29)
+  const options: QuickSelectionOption[] = []
 
-  const last180Days = new Date(today)
-  last180Days.setDate(today.getDate() - 180)
+  // Helper to check if a date range is valid
+  const isRangeValid = (startDate: Date, endDate: Date): boolean => {
+    return startDate >= minDate && endDate <= maxDate
+  }
 
-  return [
-    {
+  // Today
+  if (isRangeValid(today, today)) {
+    options.push({
       key: 'today',
       label: 'Today',
       getValue: () => [formatDate(today), formatDate(today)],
-    },
-    {
+      disabled: false,
+    })
+  }
+
+  // Yesterday
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  if (isRangeValid(yesterday, yesterday)) {
+    options.push({
       key: 'yesterday',
       label: 'Yesterday',
       getValue: () => [formatDate(yesterday), formatDate(yesterday)],
-    },
-    {
-      key: 'last30days',
-      label: 'Last 30 days',
-      getValue: () => [formatDate(last30Days), formatDate(today)],
-    },
-    {
-      key: 'thismonth',
-      label: 'This month',
-      getValue: () => [formatDate(startOfMonth), formatDate(today)],
-    },
-    {
-      key: 'last180days',
-      label: '180 days',
-      getValue: () => [formatDate(last180Days), formatDate(today)],
-    },
-  ]
+      disabled: false,
+    })
+  }
+
+  // Last 30 days
+  const last30Days = new Date(today)
+  last30Days.setDate(today.getDate() - 29)
+  const isLast30Valid = isRangeValid(last30Days, today)
+  options.push({
+    key: 'last30days',
+    label: 'Last 30 days',
+    getValue: () => [formatDate(last30Days), formatDate(today)],
+    disabled: !isLast30Valid,
+  })
+
+  // This month
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const isThisMonthValid = isRangeValid(startOfMonth, today)
+  options.push({
+    key: 'thismonth',
+    label: 'This month',
+    getValue: () => [formatDate(startOfMonth), formatDate(today)],
+    disabled: !isThisMonthValid,
+  })
+
+  // Last 180 days
+  const last180Days = new Date(today)
+  last180Days.setDate(today.getDate() - 179)
+  const isLast180Valid = isRangeValid(last180Days, today)
+  options.push({
+    key: 'last180days',
+    label: '180 days',
+    getValue: () => [formatDate(last180Days), formatDate(today)],
+    disabled: !isLast180Valid,
+  })
+
+  return options
 })
 
 // Helper Functions
@@ -516,65 +545,67 @@ const isSameDay = (date1: Date, date2: Date): boolean => {
 }
 
 const isDateSelectable = (date: Date): boolean => {
-  const todayTime = new Date(today)
-  todayTime.setHours(0, 0, 0, 0) // Reset time to start of day
+  if (!props.minDate || !props.maxDate) return false
 
   const checkDate = new Date(date)
   checkDate.setHours(0, 0, 0, 0) // Reset time to start of day
 
-  // Calculate minimum date (180 days before today, excluding current date)
-  const minDate = new Date(todayTime)
-  minDate.setDate(todayTime.getDate() - 180)
+  const minDate = new Date(props.minDate)
+  minDate.setHours(0, 0, 0, 0)
 
-  // Date is selectable if it's within the range: yesterday and previous 180 days (total 180 days excluding today)
-  return checkDate >= minDate && checkDate <= todayTime
+  const maxDate = new Date(props.maxDate)
+  maxDate.setHours(0, 0, 0, 0)
+
+  return checkDate >= minDate && checkDate <= maxDate
 }
 
 const isMonthSelectable = (year: number, month: number): boolean => {
-  const currentYear = today.getFullYear()
-  const currentMonth = today.getMonth()
+  if (!props.minDate || !props.maxDate) return false
 
   // Create date for the month being checked
   const checkDate = new Date(year, month, 1)
 
-  // Create date for 5 months ago from current month
-  const minDate = new Date(currentYear, currentMonth - 5, 1)
+  // Parse min and max dates - could be YYYY-MM or YYYY-MM-DD format
+  const minDateStr = props.minDate
+  const maxDateStr = props.maxDate
 
-  // Create date for current month
-  const maxDate = new Date(currentYear, currentMonth, 1)
+  let minDate: Date
+  let maxDate: Date
 
-  // Month is selectable if it's within the range: current month + previous 5 months
+  if (minDateStr.length === 7) {
+    // YYYY-MM format
+    const [minYear, minMonth] = minDateStr.split('-').map(Number)
+    minDate = new Date(minYear, minMonth - 1, 1)
+  } else {
+    // YYYY-MM-DD format
+    const minDateObj = new Date(minDateStr)
+    minDate = new Date(minDateObj.getFullYear(), minDateObj.getMonth(), 1)
+  }
+
+  if (maxDateStr.length === 7) {
+    // YYYY-MM format
+    const [maxYear, maxMonth] = maxDateStr.split('-').map(Number)
+    maxDate = new Date(maxYear, maxMonth - 1, 1)
+  } else {
+    // YYYY-MM-DD format
+    const maxDateObj = new Date(maxDateStr)
+    maxDate = new Date(maxDateObj.getFullYear(), maxDateObj.getMonth(), 1)
+  }
+
   return checkDate >= minDate && checkDate <= maxDate
 }
 
 const isDateInSelectedRange = (date: Date): boolean => {
-  if (actualMode.value !== 'range' || !selectedRange.value?.start || !selectedRange.value?.end)
-    return false
+  if (!selectedRange.value?.start || !selectedRange.value?.end) return false
   return date >= selectedRange.value.start && date <= selectedRange.value.end
 }
 
 const isRangeStart = (date: Date): boolean => {
-  return !!(
-    actualMode.value === 'range' &&
-    selectedRange.value?.start &&
-    isSameDay(date, selectedRange.value.start)
-  )
+  return !!(selectedRange.value?.start && isSameDay(date, selectedRange.value.start))
 }
 
 const isRangeEnd = (date: Date): boolean => {
-  return !!(
-    actualMode.value === 'range' &&
-    selectedRange.value?.end &&
-    isSameDay(date, selectedRange.value.end)
-  )
-}
-
-const isSelected = (date: Date): boolean => {
-  if (actualMode.value === 'range') {
-    return isRangeStart(date) || isRangeEnd(date)
-  } else {
-    return selectedDate.value ? isSameDay(date, selectedDate.value) : false
-  }
+  return !!(selectedRange.value?.end && isSameDay(date, selectedRange.value.end))
 }
 
 const getDayClasses = (dayData: DayData): string => {
@@ -591,14 +622,11 @@ const getDayClasses = (dayData: DayData): string => {
       classes.push('bg-primary-100 border border-primary-300')
     }
 
-    if (actualMode.value === 'range') {
-      if (isRangeStart(dayData.date) || isRangeEnd(dayData.date)) {
-        classes.push('bg-primary-700 text-white')
-      } else if (isDateInSelectedRange(dayData.date)) {
-        classes.push('bg-primary-300 text-white')
-      }
-    } else if (isSelected(dayData.date)) {
+    // Always handle as range mode
+    if (isRangeStart(dayData.date) || isRangeEnd(dayData.date)) {
       classes.push('bg-primary-700 text-white')
+    } else if (isDateInSelectedRange(dayData.date)) {
+      classes.push('bg-primary-300 text-white')
     }
   }
 
@@ -629,28 +657,22 @@ const getMonthClasses = (monthData: MonthData): string => {
 }
 
 const isMonthSelected = (monthString: string): boolean => {
-  if (actualMode.value === 'range') {
-    const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
-    return values.some((v) => v === monthString)
-  }
-  return props.modelValue === monthString
+  const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
+  return values.some((v) => v === monthString)
 }
 
 const isMonthInSelectedRange = (monthString: string): boolean => {
-  if (actualMode.value !== 'range') return false
   const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
   if (!values[0] || !values[1]) return false
   return monthString > values[0] && monthString < values[1]
 }
 
 const isMonthRangeStart = (monthString: string): boolean => {
-  if (actualMode.value !== 'range') return false
   const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
   return values[0] === monthString
 }
 
 const isMonthRangeEnd = (monthString: string): boolean => {
-  if (actualMode.value !== 'range') return false
   const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
   return values[1] === monthString
 }
@@ -659,29 +681,23 @@ const isMonthRangeEnd = (monthString: string): boolean => {
 const handleDateClick = (date: Date): void => {
   if (!isDateSelectable(date)) return
 
-  if (actualMode.value === 'range') {
-    if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
+  // Always handle as range selection
+  if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
+    selectedRange.value = { start: date, end: null }
+    rangeStart.value = date
+  } else if (selectedRange.value?.start && !selectedRange.value?.end) {
+    if (date >= selectedRange.value.start) {
+      selectedRange.value.end = date
+      emit('range-selected', { start: selectedRange.value.start, end: selectedRange.value.end })
+      emit('update:modelValue', [
+        formatDate(selectedRange.value.start),
+        formatDate(selectedRange.value.end),
+      ])
+      isOpen.value = false
+    } else {
       selectedRange.value = { start: date, end: null }
       rangeStart.value = date
-    } else if (selectedRange.value?.start && !selectedRange.value?.end) {
-      if (date >= selectedRange.value.start) {
-        selectedRange.value.end = date
-        emit('range-selected', { start: selectedRange.value.start, end: selectedRange.value.end })
-        emit('update:modelValue', [
-          formatDate(selectedRange.value.start),
-          formatDate(selectedRange.value.end),
-        ])
-        isOpen.value = false
-      } else {
-        selectedRange.value = { start: date, end: null }
-        rangeStart.value = date
-      }
     }
-  } else {
-    selectedDate.value = date
-    emit('date-selected', date)
-    emit('update:modelValue', formatDate(date))
-    isOpen.value = false
   }
 }
 
@@ -690,63 +706,46 @@ const handleMonthClick = (monthData: MonthData): void => {
 
   const selectedMonth = new Date(displayYear.value, monthData.month, 1)
 
-  if (actualMode.value === 'range') {
-    if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
+  // Always handle as range selection
+  if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
+    selectedRange.value = { start: selectedMonth, end: null }
+    rangeStart.value = selectedMonth
+  } else if (selectedRange.value?.start && !selectedRange.value?.end) {
+    if (selectedMonth >= selectedRange.value.start) {
+      selectedRange.value.end = selectedMonth
+      emit('month-range-selected', {
+        start: selectedRange.value.start,
+        end: selectedRange.value.end,
+      })
+      emit('update:modelValue', [
+        formatMonth(selectedRange.value.start.getFullYear(), selectedRange.value.start.getMonth()),
+        formatMonth(selectedRange.value.end.getFullYear(), selectedRange.value.end.getMonth()),
+      ])
+      isOpen.value = false
+    } else {
       selectedRange.value = { start: selectedMonth, end: null }
       rangeStart.value = selectedMonth
-    } else if (selectedRange.value?.start && !selectedRange.value?.end) {
-      if (selectedMonth >= selectedRange.value.start) {
-        selectedRange.value.end = selectedMonth
-        emit('month-range-selected', {
-          start: selectedRange.value.start,
-          end: selectedRange.value.end,
-        })
-        emit('update:modelValue', [
-          formatMonth(
-            selectedRange.value.start.getFullYear(),
-            selectedRange.value.start.getMonth()
-          ),
-          formatMonth(selectedRange.value.end.getFullYear(), selectedRange.value.end.getMonth()),
-        ])
-        isOpen.value = false
-      } else {
-        selectedRange.value = { start: selectedMonth, end: null }
-        rangeStart.value = selectedMonth
-      }
     }
-  } else {
-    selectedDate.value = selectedMonth
-    emit('month-selected', selectedMonth)
-    emit('update:modelValue', formatMonth(displayYear.value, monthData.month))
-    isOpen.value = false
   }
 }
 
 const clearSelection = (): void => {
-  if (actualMode.value === 'range') {
-    selectedRange.value = { start: null, end: null }
-    rangeStart.value = null
-  } else {
-    selectedDate.value = null
-  }
+  selectedRange.value = { start: null, end: null }
+  rangeStart.value = null
   emit('update:modelValue', null)
   isOpen.value = false
 }
 
 const handleQuickSelection = (option: QuickSelectionOption): void => {
+  if (option.disabled) return
+
   const value = option.getValue()
+  // Always handle as range selection
   if (Array.isArray(value)) {
-    // Range selection
     const startDate = new Date(value[0])
     const endDate = new Date(value[1])
     selectedRange.value = { start: startDate, end: endDate }
     emit('range-selected', { start: startDate, end: endDate })
-    emit('update:modelValue', value)
-  } else {
-    // Single date selection
-    const date = new Date(value)
-    selectedDate.value = date
-    emit('date-selected', date)
     emit('update:modelValue', value)
   }
   // Auto-close after quick selection
@@ -754,10 +753,16 @@ const handleQuickSelection = (option: QuickSelectionOption): void => {
 }
 
 const getQuickSelectionClasses = (option: QuickSelectionOption): string => {
+  if (option.disabled) {
+    return 'text-gray-400 cursor-not-allowed'
+  }
+
   const value = option.getValue()
-  const isSelected = Array.isArray(props.modelValue)
-    ? props.modelValue[0] === value[0] && props.modelValue[1] === value[1]
-    : props.modelValue === value
+  const currentValue = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
+
+  // Check if the option's value matches current selection
+  const isSelected =
+    Array.isArray(value) && currentValue[0] === value[0] && currentValue[1] === value[1]
 
   return isSelected
     ? 'bg-primary-700 text-white font-medium shadow-sm'
@@ -815,7 +820,7 @@ const handleClickOutside = (event: Event): void => {
 watch(
   () => props.modelValue,
   (newValue) => {
-    if (actualMode.value === 'range' && Array.isArray(newValue)) {
+    if (Array.isArray(newValue)) {
       if (isMonthView.value) {
         selectedRange.value = {
           start: newValue[0] ? new Date(newValue[0] + '-01') : null,
@@ -827,12 +832,9 @@ watch(
           end: newValue[1] ? new Date(newValue[1]) : null,
         }
       }
-    } else if (actualMode.value === 'single' && typeof newValue === 'string') {
-      if (isMonthView.value) {
-        selectedDate.value = new Date(newValue + '-01')
-      } else {
-        selectedDate.value = new Date(newValue)
-      }
+    } else {
+      // Reset to empty range if not array
+      selectedRange.value = { start: null, end: null }
     }
   },
   { immediate: true }
