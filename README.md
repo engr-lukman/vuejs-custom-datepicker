@@ -4,15 +4,33 @@ A clean, reusable, and highly customizable date picker component built with Vue 
 
 ## Features
 
-- ✅ **Single Date Selection** - Pick individual dates
+- ✅ **Single Date Selection** - Pick individual dates with Today button
 - ✅ **Date Range Selection** - Select start and end dates
 - ✅ **Month Selection** - Month-only picker mode
 - ✅ **Month Range Selection** - Select month ranges
+- ✅ **Date Format** - Display dates in dd/mm/yyyy format
 - ✅ **Date Validation** - Configurable min/max date ranges (default: last 180 days to today)
 - ✅ **Accessibility** - Full keyboard navigation and ARIA support
-- ✅ **Mobile Responsive** - Touch-friendly interface
+- ✅ **Mobile Responsive** - Touch-friendly interface with pointer cursors
 - ✅ **TypeScript** - Full type safety
-- ✅ **Custom Styling** - Different colors for different date states
+- ✅ **Custom Styling** - Different colors for different date states## User Interface Improvements
+
+### Date Display Format
+
+- **Input Display**: Shows dates in `dd/mm/yyyy` format (e.g., 22/09/2025)
+- **Internal Storage**: Maintains ISO format (`yyyy-mm-dd`) for data consistency
+- **Range Display**: `22/09/2025 - 30/09/2025` format for date ranges
+
+### Smart Footer
+
+- **Today Button**: Only visible in single date picker mode (not in range or month pickers)
+- **Clear Button**: Always available for resetting selections
+
+### Enhanced Interactions
+
+- **Pointer Cursors**: All selectable dates and months show pointer cursor
+- **Disabled States**: Non-selectable dates show not-allowed cursor
+- **Touch Friendly**: Optimized for mobile interactions
 
 ## Color Scheme
 

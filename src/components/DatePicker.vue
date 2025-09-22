@@ -72,7 +72,7 @@
             :key="month.month"
             @click="selectMonth(month)"
             :class="getMonthClasses(month)"
-            class="rounded p-2 text-xs transition-colors hover:bg-blue-50"
+            class="cursor-pointer rounded p-2 text-xs transition-colors hover:bg-blue-50"
           >
             {{ month.shortName }}
           </button>
@@ -98,7 +98,7 @@
               :key="index"
               @click="selectDate(day)"
               :class="getDayClasses(day)"
-              class="flex h-8 items-center justify-center rounded text-xs transition-colors"
+              class="flex h-8 cursor-pointer items-center justify-center rounded text-xs transition-colors"
             >
               {{ day.day }}
             </button>
@@ -127,11 +127,13 @@
         class="flex items-center justify-between rounded-b-lg border-t border-gray-100 bg-gray-50 p-3"
       >
         <button
+          v-if="!range && !monthPicker"
           @click="setToday"
           class="bg-primary-600 hover:bg-primary-700 rounded px-3 py-1 text-xs font-medium text-white transition-colors"
         >
           Today
         </button>
+        <div v-else></div>
         <button
           @click="clearDate"
           class="rounded border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
@@ -245,13 +247,13 @@ const displayValue = computed(() => {
   if (props.range) {
     const values = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
     if (values[0] && values[1]) {
-      return `${values[0]} - ${values[1]}`
+      return `${formatDateForDisplay(values[0])} - ${formatDateForDisplay(values[1])}`
     } else if (values[0]) {
-      return `${values[0]} - ...`
+      return `${formatDateForDisplay(values[0])} - ...`
     }
     return ''
   }
-  return (props.modelValue as string) || ''
+  return props.modelValue ? formatDateForDisplay(props.modelValue as string) : ''
 })
 
 const hasRangeStart = computed(() => {
@@ -331,6 +333,17 @@ const formatDate = (date: Date): string => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
   } catch {
     return ''
+  }
+}
+
+const formatDateForDisplay = (dateString: string): string => {
+  try {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return dateString
+    return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`
+  } catch {
+    return dateString
   }
 }
 
