@@ -13,7 +13,7 @@
       <div class="grid gap-8 md:grid-cols-2">
         <!-- Single Date with Custom Range -->
         <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 class="mb-4 text-lg font-semibold text-gray-900">Single Date (Custom Range)</h2>
+          <h2 class="mb-4 text-lg font-semibold text-gray-900">Single Date (180 Days Range)</h2>
           <DatePicker
             v-model="singleDate"
             placeholder="Select a date"
@@ -23,12 +23,14 @@
           <div v-if="singleDate" class="mt-4 rounded bg-gray-50 p-3 text-sm">
             <strong>Selected:</strong> {{ singleDate }}
           </div>
-          <div class="mt-2 text-xs text-gray-500">Valid range: {{ minDate }} to {{ maxDate }}</div>
+          <div class="mt-2 text-xs text-gray-500">
+            Valid range: Current day + previous 179 days ({{ minDate }} to {{ maxDate }})
+          </div>
         </div>
 
         <!-- Date Range with Custom Range -->
         <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 class="mb-4 text-lg font-semibold text-gray-900">Date Range (Custom Range)</h2>
+          <h2 class="mb-4 text-lg font-semibold text-gray-900">Date Range (180 Days Range)</h2>
           <DatePicker
             v-model="dateRange"
             :range="true"
@@ -40,12 +42,14 @@
             <strong>Selected:</strong>
             {{ dateRange?.[0] || 'Not set' }} to {{ dateRange?.[1] || 'Not set' }}
           </div>
-          <div class="mt-2 text-xs text-gray-500">Valid range: {{ minDate }} to {{ maxDate }}</div>
+          <div class="mt-2 text-xs text-gray-500">
+            Valid range: Current day + previous 179 days ({{ minDate }} to {{ maxDate }})
+          </div>
         </div>
 
         <!-- Single Month -->
         <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 class="mb-4 text-lg font-semibold text-gray-900">Single Month</h2>
+          <h2 class="mb-4 text-lg font-semibold text-gray-900">Single Month (6 Months Range)</h2>
           <DatePicker
             v-model="singleMonth"
             view="month"
@@ -56,12 +60,14 @@
           <div v-if="singleMonth" class="mt-4 rounded bg-gray-50 p-3 text-sm">
             <strong>Selected:</strong> {{ singleMonth }}
           </div>
-          <div class="mt-2 text-xs text-gray-500">Valid range: {{ minDate }} to {{ maxDate }}</div>
+          <div class="mt-2 text-xs text-gray-500">
+            Valid range: Current month + previous 5 months
+          </div>
         </div>
 
         <!-- Month Range -->
         <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 class="mb-4 text-lg font-semibold text-gray-900">Month Range</h2>
+          <h2 class="mb-4 text-lg font-semibold text-gray-900">Month Range (6 Months Range)</h2>
           <DatePicker
             v-model="monthRange"
             view="month"
@@ -78,7 +84,9 @@
             <strong>Selected:</strong>
             {{ monthRange?.[0] || 'Not set' }} to {{ monthRange?.[1] || 'Not set' }}
           </div>
-          <div class="mt-2 text-xs text-gray-500">Valid range: {{ minDate }} to {{ maxDate }}</div>
+          <div class="mt-2 text-xs text-gray-500">
+            Valid range: Current month + previous 5 months
+          </div>
         </div>
       </div>
     </div>
@@ -95,10 +103,12 @@ const dateRange = ref<string[] | null>(null)
 const singleMonth = ref<string | null>(null)
 const monthRange = ref<string[] | null>(null)
 
-// Default date ranges - 1 year ago to current date
+// Date validation ranges
+// - Date selection: 180 days (current day + previous 179 days)
+// - Month selection: 6 months (current month + previous 5 months)
 const today = new Date()
 const minDateObj = new Date(today)
-minDateObj.setFullYear(today.getFullYear() - 1) // 1 year from current date
+minDateObj.setDate(today.getDate() - 179) // 179 days before + today = 180 days total
 const maxDateObj = new Date(today) // current date
 
 const minDate = minDateObj.toISOString().split('T')[0]

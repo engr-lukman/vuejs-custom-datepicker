@@ -38,7 +38,7 @@
         <button
           @click="navigatePrevious"
           :disabled="!canNavigatePrevious"
-          class="rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+          class="cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -57,7 +57,7 @@
         <button
           @click="navigateNext"
           :disabled="!canNavigateNext"
-          class="rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+          class="cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -223,13 +223,6 @@ const formatMonth = (year: number, month: number): string => {
   }
 }
 
-const isDateInRange = (date: Date, minDate?: string | null, maxDate?: string | null): boolean => {
-  const dateString = formatDate(date)
-  if (minDate && dateString < minDate) return false
-  if (maxDate && dateString > maxDate) return false
-  return true
-}
-
 // Props and Emits
 const props = withDefaults(defineProps<DatePickerProps>(), {
   placeholder: 'Select date',
@@ -238,7 +231,7 @@ const props = withDefaults(defineProps<DatePickerProps>(), {
   range: false,
   minDate: (() => {
     const date = new Date()
-    date.setFullYear(date.getFullYear() - 1)
+    date.setDate(date.getDate() - 179) // 179 days before + today = 180 days total
     return date.toISOString().split('T')[0]
   })(),
   maxDate: (() => {
@@ -272,32 +265,59 @@ const displayMonth = computed(() => MONTH_NAMES[currentDate.value.getMonth()])
 const displayYear = computed(() => currentDate.value.getFullYear())
 
 const canNavigatePrevious = computed(() => {
-  if (!props.minDate) return true
+  const today = new Date()
 
   if (isMonthView.value) {
+    // For month view: check if we can navigate to previous year
+    // Allow navigation if the previous year contains any of the valid months (current + previous 5)
     const prevYear = currentDate.value.getFullYear() - 1
-    const minYear = parseInt(props.minDate.substring(0, 4))
-    return prevYear >= minYear
+    const currentMonth = today.getMonth()
+
+    // Check if previous year has any valid months
+    // Valid months: current month + previous 5 months
+    const minValidMonth = currentMonth - 5
+
+    // If minValidMonth is negative, it means we need to check previous year
+    if (minValidMonth < 0) {
+      // Some valid months are in the previous year
+      return true
+    } else {
+      // All valid months are in current year or later
+      return prevYear >= today.getFullYear()
+    }
   } else {
-    const prevMonth = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() - 1, 1)
-    const prevMonthString = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`
-    const minMonthString = props.minDate.substring(0, 7)
-    return prevMonthString >= minMonthString
+    // For date view: check if we can navigate to previous month
+    // Calculate minimum allowed date (179 days before today)
+    const minDate = new Date(today)
+    minDate.setDate(today.getDate() - 179)
+
+    // Allow navigation if the previous month contains any selectable dates
+    const lastDayOfPrevMonth = new Date(
+      currentDate.value.getFullYear(),
+      currentDate.value.getMonth(),
+      0
+    )
+    return lastDayOfPrevMonth >= minDate
   }
 })
 
 const canNavigateNext = computed(() => {
-  if (!props.maxDate) return true
+  const today = new Date()
 
   if (isMonthView.value) {
+    // For month view: check if we can navigate to next year
     const nextYear = currentDate.value.getFullYear() + 1
-    const maxYear = parseInt(props.maxDate.substring(0, 4))
-    return nextYear <= maxYear
+
+    // Can navigate to next year only if it contains valid months
+    // Valid months are current month + previous 5 months
+    // Since we only allow past months, we can't navigate to future years
+    return nextYear <= today.getFullYear()
   } else {
+    // For date view: check if we can navigate to next month
     const nextMonth = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() + 1, 1)
-    const nextMonthString = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`
-    const maxMonthString = props.maxDate.substring(0, 7)
-    return nextMonthString <= maxMonthString
+
+    // Can navigate to next month only if current date is today or earlier
+    return nextMonth <= new Date(today.getFullYear(), today.getMonth() + 1, 1)
   }
 })
 
@@ -413,25 +433,36 @@ const isSameDay = (date1: Date, date2: Date): boolean => {
 }
 
 const isDateSelectable = (date: Date): boolean => {
-  return isDateInRange(date, props.minDate, props.maxDate)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0) // Reset time to start of day
+
+  const checkDate = new Date(date)
+  checkDate.setHours(0, 0, 0, 0) // Reset time to start of day
+
+  // Calculate minimum date (179 days before today)
+  const minDate = new Date(today)
+  minDate.setDate(today.getDate() - 179)
+
+  // Date is selectable if it's within the range: today and previous 179 days (total 180 days)
+  return checkDate >= minDate && checkDate <= today
 }
 
 const isMonthSelectable = (year: number, month: number): boolean => {
-  if (!props.minDate && !props.maxDate) return true
+  const today = new Date()
+  const currentYear = today.getFullYear()
+  const currentMonth = today.getMonth()
 
-  const monthString = formatMonth(year, month)
+  // Create date for the month being checked
+  const checkDate = new Date(year, month, 1)
 
-  if (props.minDate) {
-    const minMonthString = props.minDate.substring(0, 7)
-    if (monthString < minMonthString) return false
-  }
+  // Create date for 5 months ago from current month
+  const minDate = new Date(currentYear, currentMonth - 5, 1)
 
-  if (props.maxDate) {
-    const maxMonthString = props.maxDate.substring(0, 7)
-    if (monthString > maxMonthString) return false
-  }
+  // Create date for current month
+  const maxDate = new Date(currentYear, currentMonth, 1)
 
-  return true
+  // Month is selectable if it's within the range: current month + previous 5 months
+  return checkDate >= minDate && checkDate <= maxDate
 }
 
 const isDateInSelectedRange = (date: Date): boolean => {
