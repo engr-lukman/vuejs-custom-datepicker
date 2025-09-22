@@ -268,12 +268,12 @@ const props = withDefaults(defineProps<DatePickerProps>(), {
   range: false,
   minDate: (() => {
     const date = new Date()
-    date.setDate(date.getDate() - 179) // 179 days before + today = 180 days total
-    return date.toISOString().split('T')[0]
+    date.setDate(date.getDate() - 180) // 180 days before current date (excluding current date)
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
   })(),
   maxDate: (() => {
     const date = new Date()
-    return date.toISOString().split('T')[0]
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
   })(),
 })
 
@@ -294,6 +294,9 @@ const selectedDate = ref<Date | null>(null)
 const selectedRange = ref<{ start: Date | null; end: Date | null }>({ start: null, end: null })
 const rangeStart = ref<Date | null>(null)
 
+// Shared today variable to avoid creating multiple Date instances
+const today = new Date()
+
 // Computed Properties
 const actualMode = computed(() => (props.range ? 'range' : props.mode))
 const isMonthView = computed(() => props.view === 'month')
@@ -302,8 +305,6 @@ const displayMonth = computed(() => MONTH_NAMES[currentDate.value.getMonth()])
 const displayYear = computed(() => currentDate.value.getFullYear())
 
 const canNavigatePrevious = computed(() => {
-  const today = new Date()
-
   if (isMonthView.value) {
     // For month view: check if we can navigate to previous year
     // Allow navigation if the previous year contains any of the valid months (current + previous 5)
@@ -324,9 +325,9 @@ const canNavigatePrevious = computed(() => {
     }
   } else {
     // For date view: check if we can navigate to previous month
-    // Calculate minimum allowed date (179 days before today)
+    // Calculate minimum allowed date (180 days before today, excluding current date)
     const minDate = new Date(today)
-    minDate.setDate(today.getDate() - 179)
+    minDate.setDate(today.getDate() - 180)
 
     // Allow navigation if the previous month contains any selectable dates
     const lastDayOfPrevMonth = new Date(
@@ -339,8 +340,6 @@ const canNavigatePrevious = computed(() => {
 })
 
 const canNavigateNext = computed(() => {
-  const today = new Date()
-
   if (isMonthView.value) {
     // For month view: check if we can navigate to next year
     const nextYear = currentDate.value.getFullYear() + 1
@@ -457,7 +456,6 @@ const showQuickSelection = computed(() => {
 })
 
 const quickSelectionOptions = computed((): QuickSelectionOption[] => {
-  const today = new Date()
   const yesterday = new Date(today)
   yesterday.setDate(today.getDate() - 1)
 
@@ -469,7 +467,7 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
   last30Days.setDate(today.getDate() - 29)
 
   const last180Days = new Date(today)
-  last180Days.setDate(today.getDate() - 179)
+  last180Days.setDate(today.getDate() - 180)
 
   return [
     {
@@ -523,22 +521,21 @@ const isSameDay = (date1: Date, date2: Date): boolean => {
 }
 
 const isDateSelectable = (date: Date): boolean => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0) // Reset time to start of day
+  const todayTime = new Date(today)
+  todayTime.setHours(0, 0, 0, 0) // Reset time to start of day
 
   const checkDate = new Date(date)
   checkDate.setHours(0, 0, 0, 0) // Reset time to start of day
 
-  // Calculate minimum date (179 days before today)
-  const minDate = new Date(today)
-  minDate.setDate(today.getDate() - 179)
+  // Calculate minimum date (180 days before today, excluding current date)
+  const minDate = new Date(todayTime)
+  minDate.setDate(todayTime.getDate() - 180)
 
-  // Date is selectable if it's within the range: today and previous 179 days (total 180 days)
-  return checkDate >= minDate && checkDate <= today
+  // Date is selectable if it's within the range: yesterday and previous 180 days (total 180 days excluding today)
+  return checkDate >= minDate && checkDate <= todayTime
 }
 
 const isMonthSelectable = (year: number, month: number): boolean => {
-  const today = new Date()
   const currentYear = today.getFullYear()
   const currentMonth = today.getMonth()
 
@@ -676,8 +673,8 @@ const handleDateClick = (date: Date): void => {
         selectedRange.value.end = date
         emit('range-selected', { start: selectedRange.value.start, end: selectedRange.value.end })
         emit('update:modelValue', [
-          selectedRange.value.start.toISOString().split('T')[0],
-          selectedRange.value.end.toISOString().split('T')[0],
+          formatDate(selectedRange.value.start),
+          formatDate(selectedRange.value.end),
         ])
         isOpen.value = false
       } else {
@@ -688,7 +685,7 @@ const handleDateClick = (date: Date): void => {
   } else {
     selectedDate.value = date
     emit('date-selected', date)
-    emit('update:modelValue', date.toISOString().split('T')[0])
+    emit('update:modelValue', formatDate(date))
     isOpen.value = false
   }
 }
