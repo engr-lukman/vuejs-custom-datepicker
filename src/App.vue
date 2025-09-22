@@ -164,7 +164,7 @@ const createMonthConfig = (monthsBack: number) => {
 }
 
 // Configurations
-const dateConfig = createDateConfig(30) // Last 30 days
+const dateConfig = createDateConfig(29) // Last 30 days
 const monthConfig = createMonthConfig(5) // Last 5 months
 const extendedConfig = createDateConfig(180) // Last 6 months
 

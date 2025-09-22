@@ -1,8 +1,7 @@
 <template>
   <div class="relative">
-    <!-- Input Field -->
     <input
-      ref="inputElement"
+      ref="datePickerRef"
       :value="displayValue"
       :placeholder="placeholderText"
       readonly
@@ -17,7 +16,7 @@
 
     <!-- Calendar Icon -->
     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-      <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -41,7 +40,7 @@
         <!-- Quick Selection Sidebar -->
         <div
           v-if="showQuickSelection"
-          class="w-36 border-r border-gray-100 bg-gradient-to-b from-gray-50 to-gray-100"
+          class="w-32 border-r border-gray-100 bg-gradient-to-b from-gray-50 to-gray-100"
           role="region"
           aria-label="Quick date selection options"
         >
@@ -79,7 +78,7 @@
               class="focus:ring-primary-500 cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg
-                class="h-4 w-4"
+                class="h-5 w-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -106,7 +105,7 @@
               class="focus:ring-primary-500 cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg
-                class="h-4 w-4"
+                class="h-5 w-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -300,18 +299,18 @@ const props = withDefaults(defineProps<DatePickerProps>(), {
 const emit = defineEmits<{
   'update:modelValue': [value: (string | null)[] | string | null]
   'date-selected': [date: Date]
-  'range-selected': [range: { start: Date; end: Date }]
+  'date-range-selected': [range: { start: Date; end: Date }]
   'month-selected': [date: Date]
   'month-range-selected': [range: { start: Date; end: Date }]
 }>()
 
 // Refs
-const inputElement = ref<HTMLInputElement | null>(null)
-const dropdown = ref<HTMLElement | null>(null)
 const isOpen = ref(false)
+const datePickerRef = ref<HTMLInputElement | null>(null)
+const dropdown = ref<HTMLElement | null>(null)
+const selectedSingle = ref<Date | null>(null)
 const currentDate = ref(new Date())
 const selectedRange = ref<{ start: Date | null; end: Date | null }>({ start: null, end: null })
-const selectedSingle = ref<Date | null>(null)
 
 // Computed Properties
 const isMonthView = computed(() => props.view === 'month')
@@ -515,16 +514,6 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
       isVisible: true,
     },
     {
-      key: 'last7days',
-      label: 'Last 7 days',
-      getValue: () => {
-        const last7Days = new Date(today)
-        last7Days.setDate(today.getDate() - 6)
-        return [formatDate(last7Days), formatDate(today)]
-      },
-      isVisible: true,
-    },
-    {
       key: 'last30days',
       label: 'Last 30 days',
       getValue: () => {
@@ -551,7 +540,7 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
         last180Days.setDate(today.getDate() - 179)
         return [formatDate(last180Days), formatDate(today)]
       },
-      isVisible: false,
+      isVisible: true,
     },
   ].filter((option) => option.isVisible !== false)
 })
@@ -770,7 +759,10 @@ const handleDateClick = (date: Date): void => {
       // Complete the range
       if (date >= selectedRange.value.start) {
         selectedRange.value.end = date
-        emit('range-selected', { start: selectedRange.value.start, end: selectedRange.value.end })
+        emit('date-range-selected', {
+          start: selectedRange.value.start,
+          end: selectedRange.value.end,
+        })
         emit('update:modelValue', [
           formatDate(selectedRange.value.start),
           formatDate(selectedRange.value.end),
@@ -840,7 +832,7 @@ const handleQuickSelection = (option: QuickSelectionOption): void => {
   const endDate = new Date(value[1])
 
   selectedRange.value = { start: startDate, end: endDate }
-  emit('range-selected', { start: startDate, end: endDate })
+  emit('date-range-selected', { start: startDate, end: endDate })
   emit('update:modelValue', value)
 
   // Auto-close after quick selection
@@ -900,8 +892,8 @@ const handleClickOutside = (event: Event): void => {
   if (
     dropdown.value &&
     !dropdown.value.contains(target) &&
-    inputElement.value &&
-    !inputElement.value.contains(target)
+    datePickerRef.value &&
+    !datePickerRef.value.contains(target)
   ) {
     closePicker()
   }
