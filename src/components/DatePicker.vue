@@ -42,7 +42,7 @@
         >
           <div class="p-2">
             <div
-              class="bg-primary-100 text-primary-700 mb-2 rounded px-2 py-1 text-xs font-medium tracking-wide uppercase shadow-sm"
+              class="bg-primary-100 text-primary-700 mb-2 rounded px-2 py-1 text-xs font-medium tracking-wide shadow-sm"
             >
               Quick Select
             </div>
