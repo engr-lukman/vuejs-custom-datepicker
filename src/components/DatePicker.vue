@@ -182,11 +182,64 @@
 </template>
 
 <script setup lang="ts">
+// ===== IMPORTS =====
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 
-// ===== TYPES =====
+// ===== INTERFACES AND TYPES =====
 type YearMonth = { year: number; month: number }
 
+interface DatePickerProps {
+  modelValue?: (string | null)[] | string | null
+  placeholder?: string
+  view?: 'date' | 'month'
+  mode?: 'range' | 'single'
+  minNavigation?: string | null
+  maxNavigation?: string | null
+}
+
+interface DayData {
+  date: Date
+  day: number
+  month: number
+  year: number
+  isCurrentMonth: boolean
+  isToday: boolean
+  dateString: string
+}
+
+interface MonthData {
+  month: number
+  name: string
+  shortName: string
+  date: string
+  isCurrentMonth: boolean
+}
+
+interface QuickSelectionOption {
+  key: string
+  label: string
+  getValue: () => string[]
+  isEnabled?: boolean
+}
+
+// ===== CONSTANTS =====
+const DAY_NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+]
+
+// ===== UTILITY FUNCTIONS =====
 /** Normalizes a Date to start of day */
 const startOfDay = (date: Date): Date => {
   const d = new Date(date)
@@ -224,7 +277,6 @@ const isSameDay = (a: Date, b: Date): boolean =>
 
 const isToday = (date: Date): boolean => isSameDay(date, new Date())
 
-// ===== FORMATTING FUNCTIONS =====
 const formatYMD = (date: Date): string => {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -245,7 +297,6 @@ const formatYM = (year: number, month: number): string =>
 const formatMonYYYY = (date: Date, monthNames: string[]): string =>
   `${monthNames[date.getMonth()].slice(0, 3)} ${date.getFullYear()}`
 
-// ===== VALIDATION & COMPARISON =====
 const toYearMonth = (date: Date): YearMonth => ({
   year: date.getFullYear(),
   month: date.getMonth(),
@@ -257,25 +308,38 @@ const compareYearMonth = (a: YearMonth, b: YearMonth): number => {
   return 0
 }
 
-const isDateWithinBounds = (date: Date, min?: string | null, max?: string | null): boolean => {
+const isCurrentMonth = (year: number, month: number): boolean => {
+  const today = new Date()
+  return year === today.getFullYear() && month === today.getMonth()
+}
+
+const isDateWithinBounds = (
+  date: Date,
+  minNavigation?: string | null,
+  maxNavigation?: string | null
+): boolean => {
   const d = startOfDay(date)
 
-  if (min) {
-    const minDate = parseModelDate(min)
+  if (minNavigation) {
+    const minDate = parseModelDate(minNavigation)
     if (minDate && d < startOfDay(minDate)) return false
   }
 
-  if (max) {
-    const maxDate = parseModelDate(max)
+  if (maxNavigation) {
+    const maxDate = parseModelDate(maxNavigation)
     if (maxDate && d > startOfDay(maxDate)) return false
   }
 
   return true
 }
 
-const isMonthWithinBounds = (ym: YearMonth, min?: string | null, max?: string | null): boolean => {
-  const minDate = min ? parseModelDate(min) : null
-  const maxDate = max ? parseModelDate(max) : null
+const isMonthWithinBounds = (
+  ym: YearMonth,
+  minNavigation?: string | null,
+  maxNavigation?: string | null
+): boolean => {
+  const minDate = minNavigation ? parseModelDate(minNavigation) : null
+  const maxDate = maxNavigation ? parseModelDate(maxNavigation) : null
 
   if (minDate && compareYearMonth(ym, toYearMonth(minDate)) < 0) return false
   if (maxDate && compareYearMonth(ym, toYearMonth(maxDate)) > 0) return false
@@ -283,72 +347,16 @@ const isMonthWithinBounds = (ym: YearMonth, min?: string | null, max?: string | 
   return true
 }
 
-// Component Types
-interface DatePickerProps {
-  modelValue?: (string | null)[] | string | null
-  placeholder?: string
-  view?: 'date' | 'month'
-  mode?: 'range' | 'single'
-  minDate?: string | null
-  maxDate?: string | null
-}
-
-interface DayData {
-  date: Date
-  day: number
-  month: number
-  year: number
-  isCurrentMonth: boolean
-  isToday: boolean
-  dateString: string
-}
-
-interface MonthData {
-  month: number
-  name: string
-  shortName: string
-  date: string
-  isCurrentMonth: boolean
-}
-
-interface QuickSelectionOption {
-  key: string
-  label: string
-  getValue: () => string[]
-  isEnabled?: boolean
-}
-
-// Constants
-const DAY_NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
-const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-]
-
-const isCurrentMonth = (year: number, month: number): boolean => {
-  const today = new Date()
-  return year === today.getFullYear() && month === today.getMonth()
-}
-
-// Props and Emits
+// ===== PROPS =====
 const props = withDefaults(defineProps<DatePickerProps>(), {
   placeholder: '',
   view: 'date',
   mode: 'range',
-  minDate: null,
-  maxDate: null,
+  minNavigation: null,
+  maxNavigation: null,
 })
 
+// ===== EMITS =====
 const emit = defineEmits<{
   'update:modelValue': [value: (string | null)[] | string | null]
   'date-selected': [date: Date]
@@ -357,7 +365,7 @@ const emit = defineEmits<{
   'month-range-selected': [range: { start: Date; end: Date }]
 }>()
 
-// Refs
+// ===== REFS =====
 const isOpen = ref(false)
 const datePickerRef = ref<HTMLInputElement | null>(null)
 const dropdown = ref<HTMLElement | null>(null)
@@ -365,7 +373,7 @@ const selectedSingle = ref<Date | null>(null)
 const currentDate = ref(new Date())
 const selectedRange = ref<{ start: Date | null; end: Date | null }>({ start: null, end: null })
 
-// Computed Properties
+// ===== COMPUTED PROPERTIES =====
 const isMonthView = computed(() => props.view === 'month')
 const isSingleMode = computed(() => props.mode === 'single')
 
@@ -383,18 +391,18 @@ const displayMonth = computed(() => MONTH_NAMES[currentDate.value.getMonth()])
 const displayYear = computed(() => currentDate.value.getFullYear())
 
 const canNavigatePrevious = computed(() => {
-  if (!props.minDate) return true
+  if (!props.minNavigation) return true
 
   const currentYear = currentDate.value.getFullYear()
   const currentMonth = currentDate.value.getMonth()
 
   if (isMonthView.value) {
-    const minDate = parseModelDate(props.minDate)
+    const minDate = parseModelDate(props.minNavigation)
     return minDate ? currentYear - 1 >= minDate.getFullYear() : true
   } else {
     const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1
     const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear
-    const minDate = parseModelDate(props.minDate)
+    const minDate = parseModelDate(props.minNavigation)
 
     if (!minDate) return true
     const minYear = minDate.getFullYear()
@@ -405,18 +413,18 @@ const canNavigatePrevious = computed(() => {
 })
 
 const canNavigateNext = computed(() => {
-  if (!props.maxDate) return true
+  if (!props.maxNavigation) return true
 
   const currentYear = currentDate.value.getFullYear()
   const currentMonth = currentDate.value.getMonth()
 
   if (isMonthView.value) {
-    const maxDate = parseModelDate(props.maxDate)
+    const maxDate = parseModelDate(props.maxNavigation)
     return maxDate ? currentYear + 1 <= maxDate.getFullYear() : true
   } else {
     const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1
     const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear
-    const maxDate = parseModelDate(props.maxDate)
+    const maxDate = parseModelDate(props.maxNavigation)
 
     if (!maxDate) return true
     const maxYear = maxDate.getFullYear()
@@ -572,19 +580,19 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
   // Filter based on minDate constraints
   return options
     .filter((option) => {
-      if (!props.minDate) return true
+      if (!props.minNavigation) return true
       const [startDate] = option.getValue()
-      return isDateWithinBounds(new Date(startDate), props.minDate, props.maxDate)
+      return isDateWithinBounds(new Date(startDate), props.minNavigation, props.maxNavigation)
     })
     .map((option) => ({ ...option, isEnabled: true }))
 })
 
 // ===== BUSINESS LOGIC HELPERS =====
 const isDateSelectable = (date: Date): boolean =>
-  isDateWithinBounds(date, props.minDate, props.maxDate)
+  isDateWithinBounds(date, props.minNavigation, props.maxNavigation)
 
 const isMonthSelectable = (year: number, month: number): boolean =>
-  isMonthWithinBounds({ year, month }, props.minDate, props.maxDate)
+  isMonthWithinBounds({ year, month }, props.minNavigation, props.maxNavigation)
 
 // Range selection helpers
 const isDateInSelectedRange = (date: Date): boolean =>

@@ -20,8 +20,8 @@
           <DatePicker
             v-model="selectedSingleDate"
             mode="single"
-            :min-date="dateConfig.minDate"
-            :max-date="dateConfig.maxDate"
+            :min-navigation="dateConfig.minNavigation"
+            :max-navigation="dateConfig.maxNavigation"
             aria-label="Select single date"
           />
           <div v-if="selectedSingleDate" class="mt-4 rounded bg-gray-50 p-3 text-sm">
@@ -37,8 +37,8 @@
           </header>
           <DatePicker
             v-model="selectedDateRange"
-            :min-date="dateConfig.minDate"
-            :max-date="dateConfig.maxDate"
+            :min-navigation="dateConfig.minNavigation"
+            :max-navigation="dateConfig.maxNavigation"
             aria-label="Select date range"
           />
           <div
@@ -59,8 +59,8 @@
           </header>
           <DatePicker
             v-model="selectedExtendedRange"
-            :min-date="extendedConfig.minDate"
-            :max-date="extendedConfig.maxDate"
+            :min-navigation="extendedConfig.minNavigation"
+            :max-navigation="extendedConfig.maxNavigation"
             aria-label="Select extended date range"
           />
           <div
@@ -83,8 +83,8 @@
             v-model="selectedSingleMonth"
             view="month"
             mode="single"
-            :min-date="monthConfig.minDate"
-            :max-date="monthConfig.maxDate"
+            :min-navigation="monthConfig.minNavigation"
+            :max-navigation="monthConfig.maxNavigation"
             aria-label="Select single month"
           />
           <div v-if="selectedSingleMonth" class="mt-4 rounded bg-gray-50 p-3 text-sm">
@@ -101,8 +101,8 @@
           <DatePicker
             v-model="selectedMonthRange"
             view="month"
-            :min-date="monthConfig.minDate"
-            :max-date="monthConfig.maxDate"
+            :min-navigation="monthConfig.minNavigation"
+            :max-navigation="monthConfig.maxNavigation"
             aria-label="Select month range"
           />
           <div
@@ -148,8 +148,8 @@ const createDateConfig = (daysBack: number) => {
   startDate.setDate(today.getDate() - daysBack)
 
   return {
-    minDate: formatDateToString(startDate),
-    maxDate: formatDateToString(today),
+    minNavigation: formatDateToString(startDate),
+    maxNavigation: formatDateToString(today),
   }
 }
 
@@ -158,8 +158,8 @@ const createMonthConfig = (monthsBack: number) => {
   const startDate = new Date(today.getFullYear(), today.getMonth() - monthsBack, 1)
 
   return {
-    minDate: formatDateToMonthString(startDate),
-    maxDate: formatDateToMonthString(today),
+    minNavigation: formatDateToMonthString(startDate),
+    maxNavigation: formatDateToMonthString(today),
   }
 }
 
