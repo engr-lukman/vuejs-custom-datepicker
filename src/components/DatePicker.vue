@@ -55,10 +55,11 @@
                 v-for="option in quickSelectionOptions"
                 :key="option.key"
                 type="button"
+                :disabled="!option.isEnabled"
                 @click="handleQuickSelection(option)"
                 :class="getQuickSelectionClasses(option)"
                 :aria-label="`Select ${option.label}`"
-                class="hover:bg-primary-100 w-full cursor-pointer rounded px-2 py-1.5 text-left text-xs transition-colors"
+                class="hover:bg-primary-100 : w-full cursor-pointer rounded px-2 py-1.5 text-left text-xs transition-colors disabled:cursor-not-allowed disabled:text-gray-400"
               >
                 {{ option.label }}
               </button>
@@ -215,7 +216,7 @@ interface QuickSelectionOption {
   key: string
   label: string
   getValue: () => string[]
-  isVisible?: boolean
+  isEnabled?: boolean
 }
 
 // Constants
@@ -493,6 +494,8 @@ const showQuickSelection = computed(() => {
   return !isMonthView.value && !isSingleMode.value
 })
 
+console.log('Min Date:', props.minDate)
+
 const quickSelectionOptions = computed((): QuickSelectionOption[] => {
   const today = new Date()
 
@@ -501,7 +504,7 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
       key: 'today',
       label: 'Today',
       getValue: () => [formatDate(today), formatDate(today)],
-      isVisible: true,
+      isEnabled: true,
     },
     {
       key: 'yesterday',
@@ -511,7 +514,7 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
         yesterday.setDate(today.getDate() - 1)
         return [formatDate(yesterday), formatDate(yesterday)]
       },
-      isVisible: true,
+      isEnabled: true,
     },
     {
       key: 'last30days',
@@ -521,7 +524,7 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
         last30Days.setDate(today.getDate() - 29)
         return [formatDate(last30Days), formatDate(today)]
       },
-      isVisible: true,
+      isEnabled: true,
     },
     {
       key: 'thismonth',
@@ -530,7 +533,7 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
         return [formatDate(startOfMonth), formatDate(today)]
       },
-      isVisible: true,
+      isEnabled: true,
     },
     {
       key: 'last180days',
@@ -540,9 +543,16 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
         last180Days.setDate(today.getDate() - 179)
         return [formatDate(last180Days), formatDate(today)]
       },
-      isVisible: true,
+      isEnabled: props?.minDate
+        ? (() => {
+            const minDate = new Date(props.minDate as string)
+            const last180Days = new Date(today)
+            last180Days.setDate(today.getDate() - 179)
+            return last180Days >= minDate
+          })()
+        : true,
     },
-  ].filter((option) => option.isVisible !== false)
+  ]
 })
 
 // Helper Functions
