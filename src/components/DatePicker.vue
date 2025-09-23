@@ -440,15 +440,11 @@ const displayValue = computed(() => {
     if (isMonthView.value) {
       if (selectedRange.value?.start && selectedRange.value?.end) {
         return `${formatMonYYYY(selectedRange.value.start, MONTH_NAMES)} - ${formatMonYYYY(selectedRange.value.end, MONTH_NAMES)}`
-      } else if (selectedRange.value?.start) {
-        return formatMonYYYY(selectedRange.value.start, MONTH_NAMES)
       }
       return ''
     } else {
       if (selectedRange.value?.start && selectedRange.value?.end) {
         return `${formatDMY(selectedRange.value.start)} - ${formatDMY(selectedRange.value.end)}`
-      } else if (selectedRange.value?.start) {
-        return formatDMY(selectedRange.value.start)
       }
       return ''
     }
@@ -655,7 +651,7 @@ const getDayClasses = (dayData: DayData): string => {
 
   // Today indicator
   if (dayData.isToday) {
-    classes.push('bg-primary-100 border border-primary-300')
+    classes.push('border border-primary-300')
   }
 
   if (isSingleMode.value) {
@@ -687,7 +683,7 @@ const getMonthClasses = (monthData: MonthData): string => {
     if (isSelected) {
       return 'bg-primary-700 text-white font-medium shadow-md'
     } else if (monthData.isCurrentMonth) {
-      return 'bg-primary-100 border border-primary-300 text-primary-800 font-medium'
+      return 'border border-primary-300 text-primary-800 font-medium'
     } else {
       return 'text-gray-700 hover:bg-gray-100'
     }
@@ -704,7 +700,7 @@ const getMonthClasses = (monthData: MonthData): string => {
     } else if (isInRange) {
       return 'bg-primary-300 text-white border border-primary-400'
     } else if (monthData.isCurrentMonth) {
-      return 'bg-primary-100 border border-primary-300 text-primary-800 font-medium'
+      return 'border border-primary-300 text-primary-800 font-medium'
     } else {
       return 'text-gray-700 hover:bg-gray-100'
     }
@@ -730,22 +726,17 @@ const handleDateClick = (date: Date): void => {
       // Start new range
       selectedRange.value = { start: date, end: null }
     } else if (selectedRange.value?.start && !selectedRange.value?.end) {
-      // Complete the range
-      if (date >= selectedRange.value.start) {
-        selectedRange.value.end = date
-        emit('date-range-selected', {
-          start: selectedRange.value.start,
-          end: selectedRange.value.end,
-        })
-        emit('update:modelValue', [
-          formatYMD(selectedRange.value.start),
-          formatYMD(selectedRange.value.end),
-        ])
-        isOpen.value = false
-      } else {
-        // Start new range if selected date is before start
-        selectedRange.value = { start: date, end: null }
-      }
+      // Complete the range - auto-swap if needed
+      const startDate = date < selectedRange.value.start ? date : selectedRange.value.start
+      const endDate = date < selectedRange.value.start ? selectedRange.value.start : date
+
+      selectedRange.value = { start: startDate, end: endDate }
+      emit('date-range-selected', {
+        start: startDate,
+        end: endDate,
+      })
+      emit('update:modelValue', [formatYMD(startDate), formatYMD(endDate)])
+      isOpen.value = false
     }
   }
 }
@@ -767,22 +758,22 @@ const handleMonthClick = (monthData: MonthData): void => {
       // Start new range
       selectedRange.value = { start: selectedMonth, end: null }
     } else if (selectedRange.value?.start && !selectedRange.value?.end) {
-      // Complete the range
-      if (selectedMonth >= selectedRange.value.start) {
-        selectedRange.value.end = selectedMonth
-        emit('month-range-selected', {
-          start: selectedRange.value.start,
-          end: selectedRange.value.end,
-        })
-        emit('update:modelValue', [
-          formatYM(selectedRange.value.start.getFullYear(), selectedRange.value.start.getMonth()),
-          formatYM(selectedRange.value.end.getFullYear(), selectedRange.value.end.getMonth()),
-        ])
-        isOpen.value = false
-      } else {
-        // Start new range if selected month is before start
-        selectedRange.value = { start: selectedMonth, end: null }
-      }
+      // Complete the range - auto-swap if needed
+      const startMonth =
+        selectedMonth < selectedRange.value.start ? selectedMonth : selectedRange.value.start
+      const endMonth =
+        selectedMonth < selectedRange.value.start ? selectedRange.value.start : selectedMonth
+
+      selectedRange.value = { start: startMonth, end: endMonth }
+      emit('month-range-selected', {
+        start: startMonth,
+        end: endMonth,
+      })
+      emit('update:modelValue', [
+        formatYM(startMonth.getFullYear(), startMonth.getMonth()),
+        formatYM(endMonth.getFullYear(), endMonth.getMonth()),
+      ])
+      isOpen.value = false
     }
   }
 }
