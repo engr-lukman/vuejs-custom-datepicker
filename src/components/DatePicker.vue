@@ -11,7 +11,7 @@
       @keydown.escape="closePicker"
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
-      class="focus:ring-primary-500 focus:border-primary-500 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 transition-colors duration-200 hover:border-gray-400 focus:ring-2 focus:outline-none"
+      class="focus:ring-primary-500 focus:border-primary-500 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 transition-colors duration-200 hover:border-gray-400 focus:ring-1 focus:outline-none"
     />
 
     <!-- Calendar Icon -->
@@ -59,7 +59,7 @@
                 @click="handleQuickSelection(option)"
                 :class="getQuickSelectionClasses(option)"
                 :aria-label="`Select ${option.label}`"
-                class="hover:bg-primary-100 : w-full cursor-pointer rounded px-2 py-1.5 text-left text-xs transition-colors disabled:cursor-not-allowed disabled:text-gray-400"
+                class="w-full cursor-pointer rounded px-2 py-1.5 text-left text-xs transition-colors"
               >
                 {{ option.label }}
               </button>
@@ -76,7 +76,7 @@
               @click="navigatePrevious"
               :disabled="!canNavigatePrevious"
               :aria-label="`Go to ${isMonthView ? 'previous year' : 'previous month'}`"
-              class="focus:ring-primary-500 cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              class="hover:bg-primary-300 cursor-pointer rounded p-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg
                 class="h-5 w-5"
@@ -103,7 +103,7 @@
               @click="navigateNext"
               :disabled="!canNavigateNext"
               :aria-label="`Go to ${isMonthView ? 'next year' : 'next month'}`"
-              class="focus:ring-primary-500 cursor-pointer rounded p-1 transition-colors hover:bg-gray-100 focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              class="hover:bg-primary-300 cursor-pointer rounded p-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg
                 class="h-5 w-5"
@@ -131,7 +131,7 @@
                 :disabled="!isMonthSelectable(displayYear, monthData.month)"
                 @click="handleMonthClick(monthData)"
                 :class="getMonthClasses(monthData)"
-                class="relative cursor-pointer rounded px-3 py-2 text-sm transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                class="hover:bg-primary-300 relative cursor-pointer rounded px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {{ monthData.shortName }}
               </button>
@@ -167,10 +167,10 @@
           </div>
 
           <!-- Footer -->
-          <div class="flex justify-end border-t border-gray-100 p-3">
+          <div class="flex justify-end border-t border-gray-100 p-1.5">
             <button
               @click="clearSelection"
-              class="rounded bg-gray-100 px-3 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-200"
+              class="text-primary-700 hover:bg-primary-300 bg-primary-200 cursor-pointer rounded px-3 py-1 text-sm transition-colors"
             >
               Clear
             </button>
@@ -647,7 +647,7 @@ const getDayClasses = (dayData: DayData): string => {
   }
 
   // Base classes for selectable dates
-  classes.push('text-gray-900 hover:bg-gray-100')
+  classes.push('text-gray-900 hover:bg-primary-300')
 
   // Today indicator
   if (dayData.isToday) {
@@ -685,7 +685,7 @@ const getMonthClasses = (monthData: MonthData): string => {
     } else if (monthData.isCurrentMonth) {
       return 'border border-primary-300 text-primary-800 font-medium'
     } else {
-      return 'text-gray-700 hover:bg-gray-100'
+      return 'text-gray-700 hover:bg-primary-300'
     }
   } else {
     // Range mode styling
@@ -702,7 +702,7 @@ const getMonthClasses = (monthData: MonthData): string => {
     } else if (monthData.isCurrentMonth) {
       return 'border border-primary-300 text-primary-800 font-medium'
     } else {
-      return 'text-gray-700 hover:bg-gray-100'
+      return 'text-gray-700 hover:bg-primary-300'
     }
   }
 }
@@ -810,7 +810,7 @@ const getQuickSelectionClasses = (option: QuickSelectionOption): string => {
 
   return isSelected
     ? 'bg-primary-700 text-white font-medium shadow-sm'
-    : 'text-gray-700 hover:bg-primary-100 hover:text-primary-700'
+    : 'text-gray-700 hover:bg-primary-300 hover:text-primary-700'
 }
 
 const togglePicker = (): void => {
