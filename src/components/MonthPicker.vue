@@ -1,7 +1,7 @@
 <template>
   <div class="relative">
     <input
-      ref="datePickerRef"
+      ref="monthPickerRef"
       :value="displayValue"
       :placeholder="placeholderText"
       readonly
@@ -232,7 +232,7 @@ const emit = defineEmits<{
 }>()
 
 const isOpen = ref(false)
-const datePickerRef = ref<HTMLInputElement | null>(null)
+const monthPickerRef = ref<HTMLInputElement | null>(null)
 const dropdown = ref<HTMLElement | null>(null)
 const currentDate = ref(new Date())
 const selectedSingle = ref<Date | null>(null)
@@ -407,8 +407,8 @@ const handleClickOutside = (event: Event): void => {
   if (
     dropdown.value &&
     !dropdown.value.contains(target) &&
-    datePickerRef.value &&
-    !datePickerRef.value.contains(target)
+    monthPickerRef.value &&
+    !monthPickerRef.value.contains(target)
   ) {
     closePicker()
   }
