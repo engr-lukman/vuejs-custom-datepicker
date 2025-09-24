@@ -1,172 +1,180 @@
-# Vue.js Custom DatePicker
+# Vue.js Custom Date & Month Picker
 
-A flexible and modern Vue.js date picker component built with TypeScript and Tailwind CSS. Supports both single and range selection for dates and months with built-in validation and accessibility features.
+A modern, flexible Vue 3 component library for date and month selection, built with **TypeScript** and **Tailwind CSS v4**. Supports both single and range selection, navigation constraints, and accessibility.
 
 ## Features
 
-- **Multiple Selection Modes**: Single date/month or range selection
-- **Two View Types**: Calendar view for dates or grid view for months
-- **Quick Selection**: Preset options like "Today", "Last 30 days", "This month"
+- **DatePicker.vue**: Calendar-based date selection (single or range)
+- **MonthPicker.vue**: Grid-based month selection (single or range)
+- **Navigation Constraints**: Set min/max boundaries for selectable dates or months
+- **Quick Selection**: Presets like "Today", "Yesterday", "Last 30 days", etc. (DatePicker only)
 
-## Quick Start
+---
+
+## Installation
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Start development server
-pnpm run dev
-
-# Build for production
-pnpm run build
+pnpm run dev    # Start development server
+pnpm run build  # Build for production
 ```
+
+---
 
 ## Usage
 
-### Basic Examples
-
-**Single Date Selection:**
+### DatePicker
 
 ```vue
-<template>
-  <DatePicker v-model="selectedDate" mode="single" placeholder="Choose a date" />
-</template>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-import DatePicker from './components/DatePicker.vue'
-
-const selectedDate = ref<string | null>(null)
-// Result: "2024-01-15"
-</script>
-```
-
-**Date Range Selection:**
-
-```vue
-<template>
-  <DatePicker v-model="dateRange" />
-</template>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-import DatePicker from './components/DatePicker.vue'
-
-const dateRange = ref<string[] | null>(null)
-// Result: ["2024-01-15", "2024-01-20"]
-</script>
-```
-
-**Month Selection:**
-
-```vue
-<template>
-  <DatePicker v-model="selectedMonth" view="month" mode="single" />
-</template>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-import DatePicker from './components/DatePicker.vue'
-
-const selectedMonth = ref<string | null>(null)
-// Result: "2024-01"
-</script>
-```
-
-**With Date Constraints:**
-
-```vue
+<!-- Filename: src/components/DatePicker.vue -->
 <template>
   <DatePicker
-    v-model="constrainedDate"
+    v-model="selectedDate"
     mode="single"
-    :min-date="'2024-01-01'"
-    :max-date="'2024-12-31'"
+    placeholder="Select a date"
+    :min-navigation="'2025-08-01'"
+    :max-navigation="'2025-10-31'"
   />
 </template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import DatePicker from './components/DatePicker.vue'
+
+const selectedDate = ref<string | string[] | null>(null)
+</script>
 ```
 
-## API Reference
+- **Single mode:** returns `"YYYY-MM-DD"`
+- **Range mode:** returns `["YYYY-MM-DD", "YYYY-MM-DD"]`
 
-### Props
+### MonthPicker
 
-| Property      | Type                         | Default        | Description                  |
-| ------------- | ---------------------------- | -------------- | ---------------------------- |
-| `modelValue`  | `string \| string[] \| null` | `null`         | Selected date(s) or month(s) |
-| `mode`        | `'single' \| 'range'`        | `'range'`      | Selection mode               |
-| `view`        | `'date' \| 'month'`          | `'date'`       | View type                    |
-| `placeholder` | `string`                     | Auto-generated | Input placeholder            |
-| `minDate`     | `string \| null`             | `null`         | Minimum selectable date      |
-| `maxDate`     | `string \| null`             | `null`         | Maximum selectable date      |
+```vue
+<!-- Filename: src/components/MonthPicker.vue -->
+<template>
+  <MonthPicker
+    v-model="selectedMonthRange"
+    mode="range"
+    :min-navigation="'2025-01'"
+    :max-navigation="'2025-12'"
+  />
+</template>
 
-### Events
+<script setup lang="ts">
+import { ref } from 'vue'
+import MonthPicker from './components/MonthPicker.vue'
 
-| Event                  | Payload                      | Description           |
-| ---------------------- | ---------------------------- | --------------------- |
-| `update:modelValue`    | `string \| string[] \| null` | Selection changed     |
-| `date-selected`        | `Date`                       | Single date selected  |
-| `date-range-selected`  | `{start: Date, end: Date}`   | Date range selected   |
-| `month-selected`       | `Date`                       | Single month selected |
-| `month-range-selected` | `{start: Date, end: Date}`   | Month range selected  |
+const selectedMonthRange = ref<string[] | string | null>(null)
+</script>
+```
 
-### Data Formats
+- **Single mode:** returns `"YYYY-MM"`
+- **Range mode:** returns `["YYYY-MM", "YYYY-MM"]`
 
-| View + Mode    | Return Format                  | Example                        |
-| -------------- | ------------------------------ | ------------------------------ |
-| Date + Single  | `"YYYY-MM-DD"`                 | `"2024-01-15"`                 |
-| Date + Range   | `["YYYY-MM-DD", "YYYY-MM-DD"]` | `["2024-01-15", "2024-01-20"]` |
-| Month + Single | `"YYYY-MM"`                    | `"2024-01"`                    |
-| Month + Range  | `["YYYY-MM", "YYYY-MM"]`       | `["2024-01", "2024-03"]`       |
+---
 
-## Customization
+## Props
 
-### Styling
+### DatePicker
 
-The component uses Tailwind CSS with a custom pink/magenta color scheme. Colors can be customized in `src/css/main.css`:
+| Prop          | Type                       | Default  | Description           |
+| ------------- | -------------------------- | -------- | --------------------- |
+| modelValue    | string \| string[] \| null | null     | Selected date(s)      |
+| mode          | 'single' \| 'range'        | 'range'  | Selection mode        |
+| placeholder   | string                     | Auto-gen | Input placeholder     |
+| minNavigation | string \| null             | null     | Earliest date allowed |
+| maxNavigation | string \| null             | null     | Latest date allowed   |
+
+### MonthPicker
+
+| Prop          | Type                       | Default  | Description         |
+| ------------- | -------------------------- | -------- | ------------------- |
+| modelValue    | string \| string[] \| null | null     | Selected month(s)   |
+| mode          | 'single' \| 'range'        | 'single' | Selection mode      |
+| placeholder   | string                     | Auto-gen | Input placeholder   |
+| minNavigation | string \| null             | null     | Earliest year/month |
+| maxNavigation | string \| null             | null     | Latest year/month   |
+
+---
+
+## Events
+
+| Component   | Event             | Payload                    | Description       |
+| ----------- | ----------------- | -------------------------- | ----------------- |
+| DatePicker  | update:modelValue | string \| string[] \| null | Selection changed |
+| MonthPicker | update:modelValue | string \| string[] \| null | Selection changed |
+
+---
+
+## Data Formats
+
+| Component   | Mode   | Return Format                | Example                      |
+| ----------- | ------ | ---------------------------- | ---------------------------- |
+| DatePicker  | Single | "YYYY-MM-DD"                 | "2025-09-24"                 |
+| DatePicker  | Range  | ["YYYY-MM-DD", "YYYY-MM-DD"] | ["2025-09-20", "2025-09-24"] |
+| MonthPicker | Single | "YYYY-MM"                    | "2025-09"                    |
+| MonthPicker | Range  | ["YYYY-MM", "YYYY-MM"]       | ["2025-06", "2025-09"]       |
+
+---
+
+## Styling
+
+Customize via `src/css/main.css` using Tailwind CSS v4:
 
 ```css
 @theme {
-  --color-primary-500: #e54993; /* Base color */
-  --color-primary-700: #be185d; /* Selected states */
-  --color-primary-300: #f9a8d4; /* Hover states */
-  /* ... other variants */
+  --color-primary-50: #fdf2f8;
+  --color-primary-100: #fce7f3;
+  --color-primary-200: #fbcfe8;
+  --color-primary-300: #f9a8d4;
+  --color-primary-400: #f472b6;
+  --color-primary-500: #e54993; /* Base */
+  --color-primary-600: #db2777;
+  --color-primary-700: #be185d; /* Selected */
+  --color-primary-800: #9d174d;
+  --color-primary-900: #831843;
 }
 ```
 
-### Quick Selection Options
+---
 
-Available in date range mode only:
+## Quick Selection (DatePicker)
 
 - **Today**: Current date
 - **Yesterday**: Previous day
 - **Last 30 days**: 30-day period ending today
-- **This month**: From month start to today
-- **6 months**: 180-day period ending today
+- **This month**: Month start to today
+- **Last 6 months**: 180-day period ending today
+
+---
 
 ## Project Structure
 
 ```
 src/
 ├── components/
-│   └── DatePicker.vue     # Main component (928 lines)
+│   ├── DatePicker.vue
+│   └── MonthPicker.vue
 ├── css/
-│   └── main.css          # Tailwind configuration
-├── App.vue               # Demo application
-└── main.ts              # Entry point
+│   └── main.css
+├── App.vue
+└── main.ts
 ```
-
-## Common Issues
-
-**Date Format Issues:**
-
-- Ensure dates follow `YYYY-MM-DD` format for date view
-- Use `YYYY-MM` format for month view constraints
-- Check timezone handling for consistent behavior
-
-## License
-
-MIT License - free for personal and commercial use.
 
 ---
 
-_Built with Vue 3, TypeScript, and Tailwind CSS_
+## Browser Support
+
+- Modern evergreen browsers (Chrome, Firefox, Safari, Edge)
+- **No IE11 support**
+
+---
+
+## License
+
+MIT License
+
+---
+
+> Built with Vue 3.5, TypeScript 5.8, and Tailwind CSS 4.1
