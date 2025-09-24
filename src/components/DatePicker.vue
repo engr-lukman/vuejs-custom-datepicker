@@ -13,28 +13,22 @@
       aria-haspopup="dialog"
       class="focus:ring-primary-500 focus:border-primary-500 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 transition-colors duration-200 hover:border-gray-400 focus:ring-1 focus:outline-none"
     />
-    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-      <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-        />
-      </svg>
-    </div>
     <div
       v-if="isOpen"
       ref="dropdown"
       role="dialog"
       aria-modal="false"
       aria-label="Date picker"
-      class="absolute top-full left-0 z-50 mt-1 w-sm rounded-lg border border-gray-200 bg-white shadow-lg"
+      class="absolute top-full left-0 z-50 mt-1 rounded-lg border border-gray-200 bg-white shadow-lg"
+      :class="{
+        'w-xs': !showQuickSelection,
+        'w-sm': showQuickSelection,
+      }"
     >
-      <div class="flex">
+      <div class="flex flex-col sm:flex-row">
         <div
           v-if="showQuickSelection"
-          class="w-28 border-r border-gray-100 bg-gradient-to-b from-gray-50 to-gray-100"
+          class="w-full border-b border-gray-100 bg-gradient-to-b from-gray-50 to-gray-100 sm:w-28 sm:border-r sm:border-b-0"
           role="region"
           aria-label="Quick date selection options"
         >
@@ -52,7 +46,6 @@
                 :disabled="!option.isEnabled"
                 @click="handleQuickSelection(option)"
                 :class="getQuickSelectionClasses(option)"
-                :aria-label="`Select ${option.label}`"
                 class="w-full cursor-pointer rounded px-2 py-1.5 text-left text-xs transition-colors"
               >
                 {{ option.label }}
@@ -207,14 +200,9 @@ const formatDate = (date: Date, format: 'YMD' | 'DMY' | 'MonYYYY'): string => {
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
   const monthName = MONTH_NAMES[date.getMonth()].slice(0, 3)
-  switch (format) {
-    case 'YMD':
-      return `${y}-${m}-${d}`
-    case 'DMY':
-      return `${d}/${m}/${y}`
-    case 'MonYYYY':
-      return `${monthName} ${y}`
-  }
+  if (format === 'YMD') return `${y}-${m}-${d}`
+  if (format === 'DMY') return `${d}/${m}/${y}`
+  return `${monthName} ${y}`
 }
 
 const parseModelDate = (value?: string | null): Date | null => {
@@ -243,7 +231,6 @@ const isWithinBounds = (
 ): boolean => {
   const minDate = minNavigation ? parseModelDate(minNavigation) : null
   const maxDate = maxNavigation ? parseModelDate(maxNavigation) : null
-  if (!minDate && !maxDate) return true
   const dateValue = startOfDay(value)
   if (minDate && dateValue < startOfDay(minDate)) return false
   if (maxDate && dateValue > startOfDay(maxDate)) return false
@@ -270,10 +257,9 @@ const selectedRange = ref<DateRange>({ start: null, end: null })
 
 const isSingleMode = computed(() => props.mode === 'single')
 
-const placeholderText = computed(() => {
-  if (props.placeholder) return props.placeholder
-  return isSingleMode.value ? 'Select date' : 'Select date range'
-})
+const placeholderText = computed(() =>
+  props.placeholder ? props.placeholder : isSingleMode.value ? 'Select date' : 'Select date range'
+)
 
 const displayMonth = computed(() => MONTH_NAMES[currentDate.value.getMonth()])
 const displayYear = computed(() => currentDate.value.getFullYear())
@@ -306,16 +292,12 @@ const canNavigateNext = computed(() => {
 
 const displayValue = computed(() => {
   if (isSingleMode.value) {
-    if (selectedSingle.value) {
-      return formatDate(selectedSingle.value, 'DMY')
-    }
-    return ''
-  } else {
-    if (selectedRange.value?.start && selectedRange.value?.end) {
-      return `${formatDate(selectedRange.value.start, 'DMY')} - ${formatDate(selectedRange.value.end, 'DMY')}`
-    }
-    return ''
+    return selectedSingle.value ? formatDate(selectedSingle.value, 'DMY') : ''
   }
+  if (selectedRange.value?.start && selectedRange.value?.end) {
+    return `${formatDate(selectedRange.value.start, 'DMY')} - ${formatDate(selectedRange.value.end, 'DMY')}`
+  }
+  return ''
 })
 
 const calendarDays = computed((): DayData[] => {
@@ -441,27 +423,21 @@ const isSingleSelected = (date: Date): boolean =>
   !!(selectedSingle.value && isSameDay(date, selectedSingle.value))
 
 const getDayClasses = (dayData: DayData): string => {
-  const classes = []
   if (!dayData.isCurrentMonth || !isDateSelectable(dayData.date)) {
-    classes.push('text-gray-400 cursor-not-allowed')
-    return classes.join(' ')
+    return 'text-gray-400 cursor-not-allowed'
   }
-  classes.push('text-gray-900 hover:bg-primary-300')
-  if (dayData.isToday) {
-    classes.push('border border-primary-300')
-  }
+  let classes = 'text-gray-900 hover:bg-primary-300'
+  if (dayData.isToday) classes += ' border border-primary-300'
   if (isSingleMode.value) {
-    if (isSingleSelected(dayData.date)) {
-      classes.push('bg-primary-700 text-white')
-    }
+    if (isSingleSelected(dayData.date)) classes += ' bg-primary-700 text-white'
   } else {
     if (isRangeStart(dayData.date) || isRangeEnd(dayData.date)) {
-      classes.push('bg-primary-700 text-white')
+      classes += ' bg-primary-700 text-white'
     } else if (isDateInSelectedRange(dayData.date)) {
-      classes.push('bg-primary-300 text-white')
+      classes += ' bg-primary-300 text-white'
     }
   }
-  return classes.join(' ')
+  return classes
 }
 
 const handleDateClick = (date: Date): void => {
