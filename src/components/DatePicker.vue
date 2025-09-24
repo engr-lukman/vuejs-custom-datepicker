@@ -277,25 +277,30 @@ const isSameDay = (a: Date, b: Date): boolean =>
 
 const isToday = (date: Date): boolean => isSameDay(date, new Date())
 
-const formatYMD = (date: Date): string => {
+/** Format a date to various string formats */
+const formatDate = (date: Date, format: 'YMD' | 'DMY' | 'YM' | 'MonYYYY'): string => {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
+  const monthName = MONTH_NAMES[date.getMonth()].slice(0, 3)
+
+  switch (format) {
+    case 'YMD':
+      return `${y}-${m}-${d}`
+    case 'DMY':
+      return `${d}/${m}/${y}`
+    case 'YM':
+      return `${y}-${m}`
+    case 'MonYYYY':
+      return `${monthName} ${y}`
+  }
 }
 
-const formatDMY = (date: Date): string => {
-  const d = String(date.getDate()).padStart(2, '0')
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const y = date.getFullYear()
-  return `${d}/${m}/${y}`
-}
-
-const formatYM = (year: number, month: number): string =>
-  `${year}-${String(month + 1).padStart(2, '0')}`
-
-const formatMonYYYY = (date: Date, monthNames: string[]): string =>
-  `${monthNames[date.getMonth()].slice(0, 3)} ${date.getFullYear()}`
+// Convenience functions that use the core formatDate
+const formatYMD = (date: Date): string => formatDate(date, 'YMD')
+const formatDMY = (date: Date): string => formatDate(date, 'DMY')
+const formatYM = (year: number, month: number): string => formatDate(new Date(year, month, 1), 'YM')
+const formatMonYYYY = (date: Date): string => formatDate(date, 'MonYYYY')
 
 const toYearMonth = (date: Date): YearMonth => ({
   year: date.getFullYear(),
@@ -359,10 +364,6 @@ const props = withDefaults(defineProps<DatePickerProps>(), {
 // ===== EMITS =====
 const emit = defineEmits<{
   'update:modelValue': [value: (string | null)[] | string | null]
-  'date-selected': [date: Date]
-  'date-range-selected': [range: { start: Date; end: Date }]
-  'month-selected': [date: Date]
-  'month-range-selected': [range: { start: Date; end: Date }]
 }>()
 
 // ===== REFS =====
@@ -439,7 +440,7 @@ const displayValue = computed(() => {
     // Single mode
     if (selectedSingle.value) {
       return isMonthView.value
-        ? formatMonYYYY(selectedSingle.value, MONTH_NAMES)
+        ? formatMonYYYY(selectedSingle.value)
         : formatDMY(selectedSingle.value)
     }
     return ''
@@ -447,7 +448,7 @@ const displayValue = computed(() => {
     // Range mode
     if (isMonthView.value) {
       if (selectedRange.value?.start && selectedRange.value?.end) {
-        return `${formatMonYYYY(selectedRange.value.start, MONTH_NAMES)} - ${formatMonYYYY(selectedRange.value.end, MONTH_NAMES)}`
+        return `${formatMonYYYY(selectedRange.value.start)} - ${formatMonYYYY(selectedRange.value.end)}`
       }
       return ''
     } else {
@@ -722,7 +723,6 @@ const handleDateClick = (date: Date): void => {
   if (isSingleMode.value) {
     // Single mode logic
     selectedSingle.value = date
-    emit('date-selected', date)
     emit(
       'update:modelValue',
       isMonthView.value ? formatYM(date.getFullYear(), date.getMonth()) : formatYMD(date)
@@ -739,10 +739,6 @@ const handleDateClick = (date: Date): void => {
       const endDate = date < selectedRange.value.start ? selectedRange.value.start : date
 
       selectedRange.value = { start: startDate, end: endDate }
-      emit('date-range-selected', {
-        start: startDate,
-        end: endDate,
-      })
       emit('update:modelValue', [formatYMD(startDate), formatYMD(endDate)])
       isOpen.value = false
     }
@@ -757,7 +753,6 @@ const handleMonthClick = (monthData: MonthData): void => {
   if (isSingleMode.value) {
     // Single mode logic
     selectedSingle.value = selectedMonth
-    emit('month-selected', selectedMonth)
     emit('update:modelValue', formatYM(selectedMonth.getFullYear(), selectedMonth.getMonth()))
     isOpen.value = false
   } else {
@@ -773,10 +768,6 @@ const handleMonthClick = (monthData: MonthData): void => {
         selectedMonth < selectedRange.value.start ? selectedRange.value.start : selectedMonth
 
       selectedRange.value = { start: startMonth, end: endMonth }
-      emit('month-range-selected', {
-        start: startMonth,
-        end: endMonth,
-      })
       emit('update:modelValue', [
         formatYM(startMonth.getFullYear(), startMonth.getMonth()),
         formatYM(endMonth.getFullYear(), endMonth.getMonth()),
@@ -802,7 +793,6 @@ const handleQuickSelection = (option: QuickSelectionOption): void => {
   const endDate = new Date(value[1])
 
   selectedRange.value = { start: startDate, end: endDate }
-  emit('date-range-selected', { start: startDate, end: endDate })
   emit('update:modelValue', value)
 
   // Auto-close after quick selection
