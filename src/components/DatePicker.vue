@@ -309,6 +309,7 @@ const quickSelectionOptions = computed<QuickSelectionOption[]>(() => {
     d.setDate(today.getDate() - n)
     return d
   }
+
   const opts: QuickSelectionOption[] = [
     { key: 'today', label: 'Today', getValue: () => createRange(today) },
     { key: 'yesterday', label: 'Yesterday', getValue: () => createRange(daysAgo(1), daysAgo(1)) },
@@ -320,7 +321,20 @@ const quickSelectionOptions = computed<QuickSelectionOption[]>(() => {
     },
     { key: 'last180days', label: 'Last 6 months', getValue: () => createRange(daysAgo(179)) },
   ]
-  return opts.map((o) => ({ ...o, isEnabled: true }))
+
+  return opts
+    .map((o) => {
+      const [startStr, endStr] = o.getValue()
+      const start = parseModelDate(startStr)
+      const end = parseModelDate(endStr)
+      const inBounds =
+        start &&
+        end &&
+        isWithinBounds(start, props.minNavigation, props.maxNavigation) &&
+        isWithinBounds(end, props.minNavigation, props.maxNavigation)
+      return { ...o, isEnabled: !!inBounds }
+    })
+    .filter((o) => o.isEnabled)
 })
 
 const isDateSelectable = (date: Date): boolean =>
