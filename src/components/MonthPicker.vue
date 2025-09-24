@@ -230,6 +230,8 @@ const displayValue = computed(() => {
     return selectedSingle.value ? formatDate(selectedSingle.value, 'MonYYYY') : ''
   const { start, end } = selectedRange.value
   if (start && end) return `${formatDate(start, 'MonYYYY')} - ${formatDate(end, 'MonYYYY')}`
+  if (start) return formatDate(start, 'MonYYYY')
+  if (end) return formatDate(end, 'MonYYYY')
   return ''
 })
 

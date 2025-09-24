@@ -483,9 +483,19 @@ onUnmounted(() => {
 })
 
 const displayValue = computed(() => {
-  if (isSingleMode.value) return selectedSingle.value ? formatDate(selectedSingle.value, 'DMY') : ''
-  if (selectedRange.value.start && selectedRange.value.end)
-    return `${formatDate(selectedRange.value.start, 'DMY')} - ${formatDate(selectedRange.value.end, 'DMY')}`
+  if (isSingleMode.value) {
+    return selectedSingle.value ? formatDate(selectedSingle.value, 'DMY') : ''
+  }
+  const { start, end } = selectedRange.value
+  if (start && end) {
+    return `${formatDate(start, 'DMY')} - ${formatDate(end, 'DMY')}`
+  }
+  if (start) {
+    return formatDate(start, 'DMY')
+  }
+  if (end) {
+    return formatDate(end, 'DMY')
+  }
   return ''
 })
 </script>
