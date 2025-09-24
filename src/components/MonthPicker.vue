@@ -68,6 +68,7 @@
             @click="handleMonthClick(item)"
             :disabled="!isMonthSelectable(displayYear, item.month)"
             :class="getMonthClasses(item)"
+            class="relative h-10 w-auto cursor-pointer rounded text-sm transition-colors"
           >
             {{ item.shortName }}
           </button>
