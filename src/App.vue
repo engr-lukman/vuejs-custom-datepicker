@@ -11,100 +11,126 @@
 
       <!-- Main Content Grid -->
       <main class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        <!-- Single Date Selection -->
+        <!-- Single Date Selection (30 days) -->
         <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <header class="mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Single Date</h2>
-            <p class="text-sm text-gray-600">Select a single date</p>
+            <h2 class="text-lg font-semibold text-gray-900">Single Date (Last 30 Days)</h2>
+            <p class="text-sm text-gray-600">Select a single date within the last 30 days</p>
           </header>
           <DatePicker
             mode="single"
             v-model="selectedSingleDate"
-            :min-navigation="dateConfig.minNavigation"
-            :max-navigation="dateConfig.maxNavigation"
+            :min-navigation="date30Config.minNavigation"
+            :max-navigation="date30Config.maxNavigation"
           />
           <div v-if="selectedSingleDate" class="mt-4 rounded bg-gray-50 p-3 text-sm">
             <strong>Selected:</strong> {{ selectedSingleDate }}
           </div>
         </section>
 
-        <!-- Date Range Selection -->
+        <!-- Date Range Selection (30 days) -->
         <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <header class="mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Date Range</h2>
-            <p class="text-sm text-gray-600">Select a date range with quick options</p>
+            <h2 class="text-lg font-semibold text-gray-900">Date Range (Last 30 Days)</h2>
+            <p class="text-sm text-gray-600">Select a date range within the last 30 days</p>
           </header>
           <DatePicker
-            v-model="selectedDateRange"
-            :min-navigation="dateConfig.minNavigation"
-            :max-navigation="dateConfig.maxNavigation"
+            mode="range"
+            v-model="selectedDateRange30"
+            :min-navigation="date30Config.minNavigation"
+            :max-navigation="date30Config.maxNavigation"
           />
           <div
-            v-if="selectedDateRange?.[0] || selectedDateRange?.[1]"
+            v-if="selectedDateRange30?.[0] || selectedDateRange30?.[1]"
             class="mt-4 rounded bg-gray-50 p-3 text-sm"
           >
             <strong>Selected:</strong>
-            {{ selectedDateRange?.[0] || 'Not set' }} to
-            {{ selectedDateRange?.[1] || 'Not set' }}
+            {{ selectedDateRange30?.[0] || 'Not set' }} to
+            {{ selectedDateRange30?.[1] || 'Not set' }}
           </div>
         </section>
 
-        <!-- Extended Date Range -->
+        <!-- Date Range Selection (180 days) -->
         <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <header class="mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Extended Date Range</h2>
-            <p class="text-sm text-gray-600">Select from last 6 months</p>
+            <h2 class="text-lg font-semibold text-gray-900">Date Range (Last 180 Days)</h2>
+            <p class="text-sm text-gray-600">Select a date range within the last 180 days</p>
           </header>
           <DatePicker
-            v-model="selectedExtendedRange"
-            :min-navigation="extendedConfig.minNavigation"
-            :max-navigation="extendedConfig.maxNavigation"
+            mode="range"
+            v-model="selectedDateRange180"
+            :min-navigation="date180Config.minNavigation"
+            :max-navigation="date180Config.maxNavigation"
           />
           <div
-            v-if="selectedExtendedRange?.[0] || selectedExtendedRange?.[1]"
+            v-if="selectedDateRange180?.[0] || selectedDateRange180?.[1]"
             class="mt-4 rounded bg-gray-50 p-3 text-sm"
           >
             <strong>Selected:</strong>
-            {{ selectedExtendedRange?.[0] || 'Not set' }} to
-            {{ selectedExtendedRange?.[1] || 'Not set' }}
+            {{ selectedDateRange180?.[0] || 'Not set' }} to
+            {{ selectedDateRange180?.[1] || 'Not set' }}
           </div>
         </section>
 
-        <!-- Single Month Selection -->
+        <!-- Single Month Selection (Last 5 months, excluding current) -->
         <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <header class="mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Single Month</h2>
-            <p class="text-sm text-gray-600">Select a single month</p>
+            <h2 class="text-lg font-semibold text-gray-900">Single Month (Last 5 Months)</h2>
+            <p class="text-sm text-gray-600">
+              Select a single month from the last 5 months (excluding current)
+            </p>
           </header>
           <MonthPicker
             v-model="selectedSingleMonth"
-            :min-navigation="monthConfig.minNavigation"
-            :max-navigation="monthConfig.maxNavigation"
+            :min-navigation="month5Config.minNavigation"
+            :max-navigation="month5Config.maxNavigation"
           />
           <div v-if="selectedSingleMonth" class="mt-4 rounded bg-gray-50 p-3 text-sm">
             <strong>Selected:</strong> {{ selectedSingleMonth }}
           </div>
         </section>
 
-        <!-- Month Range Selection -->
+        <!-- Month Range Selection (2 months) -->
         <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <header class="mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Month Range</h2>
-            <p class="text-sm text-gray-600">Select a range of months</p>
+            <h2 class="text-lg font-semibold text-gray-900">Month Range (Last 2 Months)</h2>
+            <p class="text-sm text-gray-600">Select a range of months within the last 2 months</p>
           </header>
           <MonthPicker
             mode="range"
-            v-model="selectedMonthRange"
-            :min-navigation="monthConfig.minNavigation"
-            :max-navigation="monthConfig.maxNavigation"
+            v-model="selectedMonthRange2"
+            :min-navigation="month2Config.minNavigation"
+            :max-navigation="month2Config.maxNavigation"
           />
           <div
-            v-if="selectedMonthRange?.[0] || selectedMonthRange?.[1]"
+            v-if="selectedMonthRange2?.[0] || selectedMonthRange2?.[1]"
             class="mt-4 rounded bg-gray-50 p-3 text-sm"
           >
             <strong>Selected:</strong>
-            {{ selectedMonthRange?.[0] || 'Not set' }} to
-            {{ selectedMonthRange?.[1] || 'Not set' }}
+            {{ selectedMonthRange2?.[0] || 'Not set' }} to
+            {{ selectedMonthRange2?.[1] || 'Not set' }}
+          </div>
+        </section>
+
+        <!-- Month Range Selection (6 months) -->
+        <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <header class="mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">Month Range (Last 6 Months)</h2>
+            <p class="text-sm text-gray-600">Select a range of months within the last 6 months</p>
+          </header>
+          <MonthPicker
+            mode="range"
+            v-model="selectedMonthRange6"
+            :min-navigation="month6Config.minNavigation"
+            :max-navigation="month6Config.maxNavigation"
+          />
+          <div
+            v-if="selectedMonthRange6?.[0] || selectedMonthRange6?.[1]"
+            class="mt-4 rounded bg-gray-50 p-3 text-sm"
+          >
+            <strong>Selected:</strong>
+            {{ selectedMonthRange6?.[0] || 'Not set' }} to
+            {{ selectedMonthRange6?.[1] || 'Not set' }}
           </div>
         </section>
       </main>
@@ -134,36 +160,49 @@ const formatDateToMonthString = (date: Date): string => {
   return `${year}-${month}`
 }
 
-// Configuration factory
+// Date configs
 const createDateConfig = (daysBack: number) => {
   const today = new Date()
   const startDate = new Date(today)
   startDate.setDate(today.getDate() - daysBack)
-
   return {
     minNavigation: formatDateToString(startDate),
     maxNavigation: formatDateToString(today),
   }
 }
 
-const createMonthConfig = (monthsBack: number) => {
+// Month configs
+const createMonthConfig = (monthsBack: number, excludeCurrent = false) => {
   const today = new Date()
-  const startDate = new Date(today.getFullYear(), today.getMonth() - monthsBack, 1)
-
+  let endMonth = today.getMonth()
+  let endYear = today.getFullYear()
+  if (excludeCurrent) {
+    endMonth -= 1
+    if (endMonth < 0) {
+      endMonth = 11
+      endYear -= 1
+    }
+  }
+  const startDate = new Date(endYear, endMonth - monthsBack + 1, 1)
+  const endDate = new Date(endYear, endMonth, 1)
   return {
     minNavigation: formatDateToMonthString(startDate),
-    maxNavigation: formatDateToMonthString(today),
+    maxNavigation: formatDateToMonthString(endDate),
   }
 }
 
 // Configurations
-const dateConfig = createDateConfig(29) // Last 30 days
-const monthConfig = createMonthConfig(5) // Last 5 months
-const extendedConfig = createDateConfig(180) // Last 6 months
+const date30Config = createDateConfig(29) // Last 30 days
+const date180Config = createDateConfig(179) // Last 180 days
 
-const selectedDateRange = ref<SelectedDateRange>(null)
+const month5Config = createMonthConfig(5, true) // Last 5 months, excluding current
+const month2Config = createMonthConfig(2) // Last 2 months (including current)
+const month6Config = createMonthConfig(6) // Last 6 months (including current)
+
 const selectedSingleDate = ref<SelectedSingleValue>(null)
-const selectedMonthRange = ref<SelectedDateRange>(null)
+const selectedDateRange30 = ref<SelectedDateRange>(null)
+const selectedDateRange180 = ref<SelectedDateRange>(null)
 const selectedSingleMonth = ref<SelectedSingleValue>(null)
-const selectedExtendedRange = ref<SelectedDateRange>(null)
+const selectedMonthRange2 = ref<SelectedDateRange>(null)
+const selectedMonthRange6 = ref<SelectedDateRange>(null)
 </script>
