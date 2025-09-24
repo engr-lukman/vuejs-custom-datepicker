@@ -246,12 +246,22 @@ const getSelectedMonths = (): string[] => {
 const getMonthButtonClasses = (month: MonthItem) => {
   if (!isMonthSelectable(displayedYear.value, month.index))
     return 'text-gray-400 cursor-not-allowed'
-  const [start, end] = getSelectedMonths()
-  const isSelected = start === month.ymValue || end === month.ymValue
-  const isInRange = start && end && month.ymValue > start && month.ymValue < end
+
+  const selectedMonths = getSelectedMonths().map((d) => {
+    const date = new Date(d)
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` // YYYY-MM
+  })
+
+  const [start, end] = selectedMonths
+  const monthValue = month.ymValue
+
+  const isSelected = start === monthValue || end === monthValue
+  const isInRange = start && end && monthValue > start && monthValue < end
+
   if (isSelected) return 'bg-primary-700 text-white font-medium shadow-md'
   if (isInRange) return 'bg-primary-300 text-white border border-primary-400'
   if (month.isCurrentMonth) return 'border border-primary-300 text-primary-800 font-medium'
+
   return 'text-gray-700 hover:bg-primary-300'
 }
 
