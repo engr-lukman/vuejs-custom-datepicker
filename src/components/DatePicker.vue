@@ -186,6 +186,11 @@
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 
 // ===== INTERFACES AND TYPES =====
+interface DateRange {
+  start: Date | null
+  end: Date | null
+}
+
 interface YearMonth {
   year: number
   month: number
@@ -243,11 +248,42 @@ const MONTH_NAMES = [
 ]
 
 // ===== UTILITY FUNCTIONS =====
+
+// ----- Date Creation and Manipulation -----
 /** Normalizes a Date to start of day */
 const startOfDay = (date: Date): Date => {
   const d = new Date(date)
   d.setHours(0, 0, 0, 0)
   return d
+}
+
+/** Creates a Date for a specific year and month (day will be the 1st) */
+const createYearMonthDate = (year: number, month: number): Date => new Date(year, month, 1)
+
+/** Converts a Date to a YearMonth object */
+const toYearMonth = (date: Date): YearMonth => ({
+  year: date.getFullYear(),
+  month: date.getMonth(),
+})
+
+// ----- Date Formatting and Parsing -----
+/** Format a date to various string formats */
+const formatDate = (date: Date, format: 'YMD' | 'DMY' | 'YM' | 'MonYYYY'): string => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  const monthName = MONTH_NAMES[date.getMonth()].slice(0, 3)
+
+  switch (format) {
+    case 'YMD':
+      return `${y}-${m}-${d}`
+    case 'DMY':
+      return `${d}/${m}/${y}`
+    case 'YM':
+      return `${y}-${m}`
+    case 'MonYYYY':
+      return `${monthName} ${y}`
+  }
 }
 
 /** Parses model date string (YYYY-MM-DD or YYYY-MM) to Date */
@@ -273,54 +309,30 @@ const parseModelDate = (value?: string | null): Date | null => {
   return Number.isNaN(dt.getTime()) ? null : dt
 }
 
+// ----- Date Comparison -----
+/** Compare two dates for equality (ignoring time) */
 const isSameDay = (a: Date, b: Date): boolean =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate()
 
+/** Check if a date is today */
 const isToday = (date: Date): boolean => isSameDay(date, new Date())
 
-/** Format a date to various string formats */
-const formatDate = (date: Date, format: 'YMD' | 'DMY' | 'YM' | 'MonYYYY'): string => {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  const monthName = MONTH_NAMES[date.getMonth()].slice(0, 3)
-
-  switch (format) {
-    case 'YMD':
-      return `${y}-${m}-${d}`
-    case 'DMY':
-      return `${d}/${m}/${y}`
-    case 'YM':
-      return `${y}-${m}`
-    case 'MonYYYY':
-      return `${monthName} ${y}`
-  }
-}
-
-// Convenience functions that use the core formatDate
-const formatYMD = (date: Date): string => formatDate(date, 'YMD')
-const formatDMY = (date: Date): string => formatDate(date, 'DMY')
-const formatYM = (year: number, month: number): string => formatDate(new Date(year, month, 1), 'YM')
-const formatMonYYYY = (date: Date): string => formatDate(date, 'MonYYYY')
-
-const toYearMonth = (date: Date): YearMonth => ({
-  year: date.getFullYear(),
-  month: date.getMonth(),
-})
-
+/** Compare two YearMonth objects */
 const compareYearMonth = (a: YearMonth, b: YearMonth): number => {
   if (a.year !== b.year) return a.year < b.year ? -1 : 1
-  if (a.month !== b.month) return a.month < b.month ? -1 : 1
-  return 0
+  return a.month - b.month
 }
 
+/** Check if a month is the current month */
 const isCurrentMonth = (year: number, month: number): boolean => {
   const today = new Date()
   return year === today.getFullYear() && month === today.getMonth()
 }
 
+// ----- Navigation Boundary Checks -----
+/** Check if a date is within the navigation boundaries */
 const isDateWithinBounds = (
   date: Date,
   minNavigation?: string | null,
@@ -341,6 +353,7 @@ const isDateWithinBounds = (
   return true
 }
 
+/** Check if a year/month is within the navigation boundaries */
 const isMonthWithinBounds = (
   ym: YearMonth,
   minNavigation?: string | null,
@@ -375,7 +388,7 @@ const datePickerRef = ref<HTMLInputElement | null>(null)
 const dropdown = ref<HTMLElement | null>(null)
 const selectedSingle = ref<Date | null>(null)
 const currentDate = ref(new Date())
-const selectedRange = ref<{ start: Date | null; end: Date | null }>({ start: null, end: null })
+const selectedRange = ref<DateRange>({ start: null, end: null })
 
 // ===== COMPUTED PROPERTIES =====
 const isMonthView = computed(() => props.view === 'month')
@@ -443,20 +456,20 @@ const displayValue = computed(() => {
     // Single mode
     if (selectedSingle.value) {
       return isMonthView.value
-        ? formatMonYYYY(selectedSingle.value)
-        : formatDMY(selectedSingle.value)
+        ? formatDate(selectedSingle.value, 'MonYYYY')
+        : formatDate(selectedSingle.value, 'DMY')
     }
     return ''
   } else {
     // Range mode
     if (isMonthView.value) {
       if (selectedRange.value?.start && selectedRange.value?.end) {
-        return `${formatMonYYYY(selectedRange.value.start)} - ${formatMonYYYY(selectedRange.value.end)}`
+        return `${formatDate(selectedRange.value.start, 'MonYYYY')} - ${formatDate(selectedRange.value.end, 'MonYYYY')}`
       }
       return ''
     } else {
       if (selectedRange.value?.start && selectedRange.value?.end) {
-        return `${formatDMY(selectedRange.value.start)} - ${formatDMY(selectedRange.value.end)}`
+        return `${formatDate(selectedRange.value.start, 'DMY')} - ${formatDate(selectedRange.value.end, 'DMY')}`
       }
       return ''
     }
@@ -487,7 +500,7 @@ const calendarDays = computed((): DayData[] => {
       year,
       isCurrentMonth: false,
       isToday: isToday(date),
-      dateString: `prev-${formatYMD(date)}`,
+      dateString: `prev-${formatDate(date, 'YMD')}`,
     })
   }
 
@@ -501,7 +514,7 @@ const calendarDays = computed((): DayData[] => {
       year,
       isCurrentMonth: true,
       isToday: isToday(date),
-      dateString: `curr-${formatYMD(date)}`,
+      dateString: `curr-${formatDate(date, 'YMD')}`,
     })
   }
 
@@ -516,7 +529,7 @@ const calendarDays = computed((): DayData[] => {
       year,
       isCurrentMonth: false,
       isToday: isToday(date),
-      dateString: `next-${formatYMD(date)}`,
+      dateString: `next-${formatDate(date, 'YMD')}`,
     })
   }
 
@@ -528,7 +541,7 @@ const monthGrid = computed((): MonthData[] => {
     month: index,
     name,
     shortName: name.slice(0, 3),
-    date: formatYM(displayYear.value, index),
+    date: formatDate(createYearMonthDate(displayYear.value, index), 'YM'),
     isCurrentMonth: isCurrentMonth(displayYear.value, index),
   }))
 })
@@ -538,55 +551,56 @@ const showQuickSelection = computed(() => !isMonthView.value && !isSingleMode.va
 const quickSelectionOptions = computed((): QuickSelectionOption[] => {
   const today = new Date()
 
+  // Helper function to create date range strings
+  const createDateRange = (start: Date, end: Date = today): string[] => [
+    formatDate(start, 'YMD'),
+    formatDate(end, 'YMD'),
+  ]
+
+  // Helper to create relative date (days ago)
+  const daysAgo = (days: number): Date => {
+    const date = new Date(today)
+    date.setDate(today.getDate() - days)
+    return date
+  }
+
   const options = [
     {
       key: 'today',
       label: 'Today',
-      getValue: () => [formatYMD(today), formatYMD(today)],
+      getValue: () => createDateRange(today),
     },
     {
       key: 'yesterday',
       label: 'Yesterday',
       getValue: () => {
-        const yesterday = new Date(today)
-        yesterday.setDate(today.getDate() - 1)
-        return [formatYMD(yesterday), formatYMD(yesterday)]
+        const yesterday = daysAgo(1)
+        return createDateRange(yesterday, yesterday)
       },
     },
     {
       key: 'last30days',
       label: 'Last 30 days',
-      getValue: () => {
-        const last30Days = new Date(today)
-        last30Days.setDate(today.getDate() - 29)
-        return [formatYMD(last30Days), formatYMD(today)]
-      },
+      getValue: () => createDateRange(daysAgo(29)),
     },
     {
       key: 'thismonth',
       label: 'This month',
-      getValue: () => {
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-        return [formatYMD(startOfMonth), formatYMD(today)]
-      },
+      getValue: () => createDateRange(new Date(today.getFullYear(), today.getMonth(), 1)),
     },
     {
       key: 'last180days',
-      label: '6 months',
-      getValue: () => {
-        const last180Days = new Date(today)
-        last180Days.setDate(today.getDate() - 179)
-        return [formatYMD(last180Days), formatYMD(today)]
-      },
+      label: 'Last 6 months',
+      getValue: () => createDateRange(daysAgo(179)),
     },
   ]
 
-  // Filter based on minDate constraints
+  // Filter based on navigation constraints
   return options
     .filter((option) => {
       if (!props.minNavigation) return true
-      const [startDate] = option.getValue()
-      return isDateWithinBounds(new Date(startDate), props.minNavigation, props.maxNavigation)
+      const [startDateStr] = option.getValue()
+      return isDateWithinBounds(new Date(startDateStr), props.minNavigation, props.maxNavigation)
     })
     .map((option) => ({ ...option, isEnabled: true }))
 })
@@ -728,7 +742,9 @@ const handleDateClick = (date: Date): void => {
     selectedSingle.value = date
     emit(
       'update:modelValue',
-      isMonthView.value ? formatYM(date.getFullYear(), date.getMonth()) : formatYMD(date)
+      isMonthView.value
+        ? formatDate(createYearMonthDate(date.getFullYear(), date.getMonth()), 'YM')
+        : formatDate(date, 'YMD')
     )
     isOpen.value = false
   } else {
@@ -742,7 +758,7 @@ const handleDateClick = (date: Date): void => {
       const endDate = date < selectedRange.value.start ? selectedRange.value.start : date
 
       selectedRange.value = { start: startDate, end: endDate }
-      emit('update:modelValue', [formatYMD(startDate), formatYMD(endDate)])
+      emit('update:modelValue', [formatDate(startDate, 'YMD'), formatDate(endDate, 'YMD')])
       isOpen.value = false
     }
   }
@@ -756,7 +772,7 @@ const handleMonthClick = (monthData: MonthData): void => {
   if (isSingleMode.value) {
     // Single mode logic
     selectedSingle.value = selectedMonth
-    emit('update:modelValue', formatYM(selectedMonth.getFullYear(), selectedMonth.getMonth()))
+    emit('update:modelValue', formatDate(selectedMonth, 'YM'))
     isOpen.value = false
   } else {
     // Range selection logic for months
@@ -771,10 +787,7 @@ const handleMonthClick = (monthData: MonthData): void => {
         selectedMonth < selectedRange.value.start ? selectedRange.value.start : selectedMonth
 
       selectedRange.value = { start: startMonth, end: endMonth }
-      emit('update:modelValue', [
-        formatYM(startMonth.getFullYear(), startMonth.getMonth()),
-        formatYM(endMonth.getFullYear(), endMonth.getMonth()),
-      ])
+      emit('update:modelValue', [formatDate(startMonth, 'YM'), formatDate(endMonth, 'YM')])
       isOpen.value = false
     }
   }
