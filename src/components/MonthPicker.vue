@@ -13,23 +13,13 @@
       aria-haspopup="dialog"
       class="focus:ring-primary-500 focus:border-primary-500 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 transition-colors duration-200 hover:border-gray-400 focus:ring-1 focus:outline-none"
     />
-    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-      <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-        />
-      </svg>
-    </div>
     <div
       v-if="isOpen"
       ref="dropdown"
       role="dialog"
       aria-modal="false"
       aria-label="Month picker"
-      class="absolute top-full left-0 z-50 mt-1 w-xs max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white shadow-lg"
+      class="absolute top-full left-0 z-50 mt-1 w-xs rounded-lg border border-gray-200 bg-white shadow-lg"
     >
       <div class="flex">
         <div class="flex-1">
