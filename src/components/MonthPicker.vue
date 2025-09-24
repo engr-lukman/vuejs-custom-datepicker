@@ -1,34 +1,37 @@
 <template>
   <div class="relative">
+    <!-- Month Input -->
     <input
-      ref="monthPickerRef"
-      :value="displayValue"
+      ref="monthInputRef"
+      :value="formattedDisplayValue"
       :placeholder="placeholderText"
       readonly
       @click="togglePicker"
       @keydown.enter="togglePicker"
       @keydown.space.prevent="togglePicker"
       @keydown.escape="closePicker"
-      :aria-expanded="isOpen"
+      :aria-expanded="isPickerOpen"
       aria-haspopup="dialog"
       class="focus:ring-primary-500 focus:border-primary-500 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 transition-colors duration-200 hover:border-gray-400 focus:ring-1 focus:outline-none"
     />
 
+    <!-- Month Picker Dropdown -->
     <div
-      v-if="isOpen"
-      ref="dropdown"
+      v-if="isPickerOpen"
+      ref="dropdownRef"
       role="dialog"
       aria-modal="false"
       aria-label="Month picker"
       class="absolute top-full left-0 z-50 mt-1 w-xs rounded-lg border border-gray-200 bg-white shadow-lg"
     >
       <div class="flex flex-col">
+        <!-- Year Navigation -->
         <div class="flex items-center justify-between border-b border-gray-100 p-3">
           <button
             type="button"
-            @click="navigate('previous')"
-            :disabled="!canNavigatePrevious"
-            aria-label="Go to previous year"
+            @click="navigateYear('previous')"
+            :disabled="!canNavigatePreviousYear"
+            aria-label="Previous year"
             class="hover:bg-primary-300 cursor-pointer rounded p-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,13 +44,13 @@
             </svg>
           </button>
 
-          <h2 class="text-sm font-medium text-gray-900" aria-live="polite">{{ displayYear }}</h2>
+          <h2 class="text-sm font-medium text-gray-900" aria-live="polite">{{ displayedYear }}</h2>
 
           <button
             type="button"
-            @click="navigate('next')"
-            :disabled="!canNavigateNext"
-            aria-label="Go to next year"
+            @click="navigateYear('next')"
+            :disabled="!canNavigateNextYear"
+            aria-label="Next year"
             class="hover:bg-primary-300 cursor-pointer rounded p-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,19 +64,21 @@
           </button>
         </div>
 
+        <!-- Month Grid -->
         <div class="grid grid-cols-3 gap-2 p-3">
           <button
-            v-for="item in monthGrid"
-            :key="item.month"
-            @click="handleMonthClick(item)"
-            :disabled="!isMonthSelectable(displayYear, item.month)"
-            :class="getMonthClasses(item)"
+            v-for="month in monthList"
+            :key="month.index"
+            @click="selectMonth(month)"
+            :disabled="!isMonthSelectable(displayedYear, month.index)"
+            :class="getMonthButtonClasses(month)"
             class="relative h-10 w-auto cursor-pointer rounded text-sm transition-colors"
           >
-            {{ item.shortName }}
+            {{ month.shortName }}
           </button>
         </div>
 
+        <!-- Clear Selection -->
         <div class="flex justify-end border-t border-gray-100 p-1.5">
           <button
             @click="clearSelection"
@@ -99,14 +104,25 @@ import {
   defineEmits,
 } from 'vue'
 
-interface MonthData {
-  month: number
-  name: string
+/** ========================
+ *  Interfaces
+ * ======================== */
+interface MonthItem {
+  index: number
+  fullName: string
   shortName: string
-  date: string
+  ymValue: string
   isCurrentMonth: boolean
 }
 
+interface DateRange {
+  start: Date | null
+  end: Date | null
+}
+
+/** ========================
+ *  Constants
+ * ======================== */
 const MONTH_NAMES = [
   'January',
   'February',
@@ -122,6 +138,9 @@ const MONTH_NAMES = [
   'December',
 ]
 
+/** ========================
+ *  Props & Emits
+ * ======================== */
 const props = withDefaults(
   defineProps<{
     modelValue?: string | string[] | null
@@ -130,180 +149,188 @@ const props = withDefaults(
     minNavigation?: string | null
     maxNavigation?: string | null
   }>(),
-  {
-    placeholder: '',
-    mode: 'single',
-    minNavigation: null,
-    maxNavigation: null,
-  }
+  { placeholder: '', mode: 'single', minNavigation: null, maxNavigation: null }
 )
 
 const emit = defineEmits<{ 'update:modelValue': [string | string[] | null] }>()
 
-const isOpen = ref(false)
-const monthPickerRef = ref<HTMLInputElement | null>(null)
-const dropdown = ref<HTMLElement | null>(null)
+/** ========================
+ *  Reactive State
+ * ======================== */
+const isPickerOpen = ref(false)
+const monthInputRef = ref<HTMLInputElement | null>(null)
+const dropdownRef = ref<HTMLElement | null>(null)
 const currentDate = ref(new Date())
-const selectedSingle = ref<Date | null>(null)
-const selectedRange = ref<{ start: Date | null; end: Date | null }>({ start: null, end: null })
+const selectedSingleMonth = ref<Date | null>(null)
+const selectedMonthRange = ref<DateRange>({ start: null, end: null })
 const isSingleMode = computed(() => props.mode === 'single')
 
-const formatDate = (d: Date, fmt: 'YM' | 'MonYYYY') => {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const shortMonth = MONTH_NAMES[d.getMonth()].slice(0, 3)
-  return fmt === 'YM' ? `${y}-${m}` : `${shortMonth} ${y}`
-}
+/** ========================
+ *  Computed Properties
+ * ======================== */
+const displayedYear = computed(() => currentDate.value.getFullYear())
+const placeholderText = computed(
+  () => props.placeholder || (isSingleMode.value ? 'Select month' : 'Select month range')
+)
 
-const parseModelDate = (v?: string | null) => {
-  if (!v) return null
-  const ymMatch = /^(\d{4})-(\d{2})$/.exec(v)
-  if (ymMatch) return new Date(+ymMatch[1], +ymMatch[2] - 1, 1)
-  const dt = new Date(v)
-  return isNaN(dt.getTime()) ? null : dt
-}
+const monthList = computed<MonthItem[]>(() =>
+  MONTH_NAMES.map((name, index) => {
+    const date = new Date(displayedYear.value, index, 1)
+    return {
+      index,
+      fullName: name,
+      shortName: name.slice(0, 3),
+      ymValue: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+      isCurrentMonth:
+        new Date().getFullYear() === displayedYear.value && new Date().getMonth() === index,
+    }
+  })
+)
+
+const formattedDisplayValue = computed(() => {
+  if (isSingleMode.value)
+    return selectedSingleMonth.value
+      ? `${MONTH_NAMES[selectedSingleMonth.value.getMonth()]} ${selectedSingleMonth.value.getFullYear()}`
+      : ''
+  const { start, end } = selectedMonthRange.value
+  if (start && end)
+    return `${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()} - ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`
+  if (start) return `${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()}`
+  if (end) return `${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`
+  return ''
+})
+
+/** ========================
+ *  Navigation Logic
+ * ======================== */
+const canNavigatePreviousYear = computed(() => {
+  if (!props.minNavigation) return true
+  const minYear = new Date(props.minNavigation).getFullYear()
+  return displayedYear.value > minYear
+})
+
+const canNavigateNextYear = computed(() => {
+  if (!props.maxNavigation) return true
+  const maxYear = new Date(props.maxNavigation).getFullYear()
+  return displayedYear.value < maxYear
+})
+
+/** ========================
+ *  Utility Functions
+ * ======================== */
+const parseModelValue = (value?: string | null) => (value ? new Date(value) : null)
 
 const isMonthSelectable = (year: number, month: number) => {
-  const min = props.minNavigation && parseModelDate(props.minNavigation)
-  const max = props.maxNavigation && parseModelDate(props.maxNavigation)
-  if (min && (year < min.getFullYear() || (year === min.getFullYear() && month < min.getMonth())))
+  const minDate = props.minNavigation ? parseModelValue(props.minNavigation) : null
+  const maxDate = props.maxNavigation ? parseModelValue(props.maxNavigation) : null
+  if (
+    minDate &&
+    (year < minDate.getFullYear() || (year === minDate.getFullYear() && month < minDate.getMonth()))
+  )
     return false
-  if (max && (year > max.getFullYear() || (year === max.getFullYear() && month > max.getMonth())))
+  if (
+    maxDate &&
+    (year > maxDate.getFullYear() || (year === maxDate.getFullYear() && month > maxDate.getMonth()))
+  )
     return false
   return true
 }
 
-const displayYear = computed(() => currentDate.value.getFullYear())
-
-const placeholderText = computed(() => {
-  if (props.placeholder) return props.placeholder
-  return isSingleMode.value ? 'Select month' : 'Select month range'
-})
-
-const canNavigatePrevious = computed(() => {
-  const min = props.minNavigation && parseModelDate(props.minNavigation)
-  if (!min) return true
-  return displayYear.value - 1 >= min.getFullYear()
-})
-
-const canNavigateNext = computed(() => {
-  const max = props.maxNavigation && parseModelDate(props.maxNavigation)
-  if (!max) return true
-  return displayYear.value + 1 <= max.getFullYear()
-})
-
-const monthGrid = computed<MonthData[]>(() => {
-  return MONTH_NAMES.map((name, index) => ({
-    month: index,
-    name,
-    shortName: name.slice(0, 3),
-    date: formatDate(new Date(displayYear.value, index, 1), 'YM'),
-    isCurrentMonth:
-      new Date().getFullYear() === displayYear.value && new Date().getMonth() === index,
-  }))
-})
-
-const getSelectedValues = (): string[] => {
+const getSelectedMonths = (): string[] => {
   if (isSingleMode.value)
-    return selectedSingle.value ? [formatDate(selectedSingle.value, 'YM')] : []
-  return selectedRange.value.start && selectedRange.value.end
-    ? [formatDate(selectedRange.value.start, 'YM'), formatDate(selectedRange.value.end, 'YM')]
-    : []
+    return selectedSingleMonth.value ? [selectedSingleMonth.value.toISOString()] : []
+  const { start, end } = selectedMonthRange.value
+  return start && end ? [start.toISOString(), end.toISOString()] : []
 }
 
-const getMonthClasses = (m: MonthData): string => {
-  if (!isMonthSelectable(displayYear.value, m.month)) return 'text-gray-400 cursor-not-allowed'
-  const values = getSelectedValues()
-  const start = values[0]
-  const end = values[1]
-  const isSelected = start === m.date || end === m.date
-  const isInRange = start && end && m.date > start && m.date < end
-
+const getMonthButtonClasses = (month: MonthItem) => {
+  if (!isMonthSelectable(displayedYear.value, month.index))
+    return 'text-gray-400 cursor-not-allowed'
+  const [start, end] = getSelectedMonths()
+  const isSelected = start === month.ymValue || end === month.ymValue
+  const isInRange = start && end && month.ymValue > start && month.ymValue < end
   if (isSelected) return 'bg-primary-700 text-white font-medium shadow-md'
   if (isInRange) return 'bg-primary-300 text-white border border-primary-400'
-  if (m.isCurrentMonth) return 'border border-primary-300 text-primary-800 font-medium'
+  if (month.isCurrentMonth) return 'border border-primary-300 text-primary-800 font-medium'
   return 'text-gray-700 hover:bg-primary-300'
 }
 
-const displayValue = computed(() => {
-  if (isSingleMode.value)
-    return selectedSingle.value ? formatDate(selectedSingle.value, 'MonYYYY') : ''
-  const { start, end } = selectedRange.value
-  if (start && end) return `${formatDate(start, 'MonYYYY')} - ${formatDate(end, 'MonYYYY')}`
-  if (start) return formatDate(start, 'MonYYYY')
-  if (end) return formatDate(end, 'MonYYYY')
-  return ''
-})
+/** ========================
+ *  Picker Actions
+ * ======================== */
+const togglePicker = () => (isPickerOpen.value = !isPickerOpen.value)
+const closePicker = () => (isPickerOpen.value = false)
 
-const togglePicker = () => {
-  return (isOpen.value = !isOpen.value)
-}
-
-const closePicker = () => {
-  return (isOpen.value = false)
-}
-
-const navigate = (dir: 'previous' | 'next') => {
+const navigateYear = (direction: 'previous' | 'next') => {
   if (
-    (dir === 'previous' && !canNavigatePrevious.value) ||
-    (dir === 'next' && !canNavigateNext.value)
+    (direction === 'previous' && !canNavigatePreviousYear.value) ||
+    (direction === 'next' && !canNavigateNextYear.value)
   )
     return
-  return (currentDate.value = new Date(
-    displayYear.value + (dir === 'previous' ? -1 : 1),
-    currentDate.value.getMonth(),
-    1
-  ))
+  currentDate.value.setFullYear(
+    currentDate.value.getFullYear() + (direction === 'previous' ? -1 : 1)
+  )
 }
 
-const handleMonthClick = (m: MonthData) => {
-  if (!isMonthSelectable(displayYear.value, m.month)) return
-  const selected = new Date(displayYear.value, m.month, 1)
+const selectMonth = (month: MonthItem) => {
+  if (!isMonthSelectable(displayedYear.value, month.index)) return
+  const selected = new Date(displayedYear.value, month.index, 1)
   if (isSingleMode.value) {
-    selectedSingle.value = selected
-    emit('update:modelValue', formatDate(selected, 'YM'))
-    return (isOpen.value = false)
+    selectedSingleMonth.value = selected
+    emit('update:modelValue', selected.toISOString())
+    return (isPickerOpen.value = false)
   }
 
-  if (!selectedRange.value.start || selectedRange.value.end) {
-    selectedRange.value = { start: selected, end: null }
+  if (!selectedMonthRange.value.start || selectedMonthRange.value.end) {
+    selectedMonthRange.value = { start: selected, end: null }
   } else {
-    const start = selected < selectedRange.value.start ? selected : selectedRange.value.start
-    const end = selected > selectedRange.value.start ? selected : selectedRange.value.start
-    selectedRange.value = { start, end }
-    emit('update:modelValue', [formatDate(start, 'YM'), formatDate(end, 'YM')])
-    return (isOpen.value = false)
+    const start =
+      selected < selectedMonthRange.value.start ? selected : selectedMonthRange.value.start
+    const end =
+      selected > selectedMonthRange.value.start ? selected : selectedMonthRange.value.start
+    selectedMonthRange.value = { start, end }
+    emit('update:modelValue', [start.toISOString(), end.toISOString()])
+    isPickerOpen.value = false
   }
 }
 
 const clearSelection = () => {
-  selectedSingle.value = null
-  selectedRange.value = { start: null, end: null }
+  selectedSingleMonth.value = null
+  selectedMonthRange.value = { start: null, end: null }
   emit('update:modelValue', null)
-  return (isOpen.value = false)
+  isPickerOpen.value = false
 }
 
-const handleClickOutside = (e: Event) => {
-  const t = e.target as Node
-  if (!dropdown.value?.contains(t) && !monthPickerRef.value?.contains(t)) return closePicker()
+/** ========================
+ *  Click Outside Handler
+ * ======================== */
+const handleClickOutside = (event: Event) => {
+  const target = event.target as Node
+  if (!dropdownRef.value?.contains(target) && !monthInputRef.value?.contains(target)) closePicker()
 }
 
+/** ========================
+ *  Watchers
+ * ======================== */
 watch(
   () => props.modelValue,
   (newVal) => {
     if (isSingleMode.value) {
-      selectedSingle.value = typeof newVal === 'string' ? parseModelDate(newVal) : null
+      selectedSingleMonth.value = typeof newVal === 'string' ? parseModelValue(newVal) : null
     } else {
       const arr = Array.isArray(newVal) ? newVal : []
-      selectedRange.value = {
-        start: arr[0] ? parseModelDate(arr[0]) : null,
-        end: arr[1] ? parseModelDate(arr[1]) : null,
+      selectedMonthRange.value = {
+        start: arr[0] ? parseModelValue(arr[0]) : null,
+        end: arr[1] ? parseModelValue(arr[1]) : null,
       }
     }
   },
   { immediate: true }
 )
 
+/** ========================
+ *  Lifecycle
+ * ======================== */
 onMounted(() => document.addEventListener('click', handleClickOutside))
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
