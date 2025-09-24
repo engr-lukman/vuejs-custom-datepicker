@@ -237,10 +237,14 @@ const isMonthSelectable = (year: number, month: number) => {
 }
 
 const getSelectedMonths = (): string[] => {
-  if (isSingleMode.value)
+  if (isSingleMode.value) {
     return selectedSingleMonth.value ? [selectedSingleMonth.value.toISOString()] : []
+  }
   const { start, end } = selectedMonthRange.value
-  return start && end ? [start.toISOString(), end.toISOString()] : []
+  const months: string[] = []
+  if (start) months.push(start.toISOString())
+  if (end) months.push(end.toISOString())
+  return months
 }
 
 const getMonthButtonClasses = (month: MonthItem) => {
