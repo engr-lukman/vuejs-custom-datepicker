@@ -332,43 +332,54 @@ const isCurrentMonth = (year: number, month: number): boolean => {
 }
 
 // ----- Navigation Boundary Checks -----
+/**
+ * Check if a value is within navigation boundaries
+ * @param value - Date or YearMonth to check
+ * @param minNavigation - Minimum navigation boundary
+ * @param maxNavigation - Maximum navigation boundary
+ * @param mode - Comparison mode ('date' or 'month')
+ */
+const isWithinBounds = (
+  value: Date | YearMonth,
+  minNavigation?: string | null,
+  maxNavigation?: string | null,
+  mode: 'date' | 'month' = 'date'
+): boolean => {
+  // Parse boundary dates
+  const minDate = minNavigation ? parseModelDate(minNavigation) : null
+  const maxDate = maxNavigation ? parseModelDate(maxNavigation) : null
+
+  if (!minDate && !maxDate) return true
+
+  // Handle date comparison
+  if (mode === 'date' && value instanceof Date) {
+    const dateValue = startOfDay(value)
+    if (minDate && dateValue < startOfDay(minDate)) return false
+    if (maxDate && dateValue > startOfDay(maxDate)) return false
+    return true
+  }
+
+  // Handle month comparison
+  const yearMonth = value instanceof Date ? toYearMonth(value) : (value as YearMonth)
+  if (minDate && compareYearMonth(yearMonth, toYearMonth(minDate)) < 0) return false
+  if (maxDate && compareYearMonth(yearMonth, toYearMonth(maxDate)) > 0) return false
+
+  return true
+}
+
 /** Check if a date is within the navigation boundaries */
 const isDateWithinBounds = (
   date: Date,
   minNavigation?: string | null,
   maxNavigation?: string | null
-): boolean => {
-  const d = startOfDay(date)
-
-  if (minNavigation) {
-    const minDate = parseModelDate(minNavigation)
-    if (minDate && d < startOfDay(minDate)) return false
-  }
-
-  if (maxNavigation) {
-    const maxDate = parseModelDate(maxNavigation)
-    if (maxDate && d > startOfDay(maxDate)) return false
-  }
-
-  return true
-}
+): boolean => isWithinBounds(date, minNavigation, maxNavigation, 'date')
 
 /** Check if a year/month is within the navigation boundaries */
 const isMonthWithinBounds = (
   ym: YearMonth,
   minNavigation?: string | null,
   maxNavigation?: string | null
-): boolean => {
-  const minDate = minNavigation ? parseModelDate(minNavigation) : null
-  const maxDate = maxNavigation ? parseModelDate(maxNavigation) : null
-
-  if (minDate && compareYearMonth(ym, toYearMonth(minDate)) < 0) return false
-  if (maxDate && compareYearMonth(ym, toYearMonth(maxDate)) > 0) return false
-
-  return true
-}
-
-// ===== PROPS =====
+): boolean => isWithinBounds(ym, minNavigation, maxNavigation, 'month') // ===== PROPS =====
 const props = withDefaults(defineProps<DatePickerProps>(), {
   placeholder: '',
   view: 'date',
