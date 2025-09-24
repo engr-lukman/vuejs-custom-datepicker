@@ -508,7 +508,7 @@ const handleClickOutside = (event: Event) => {
 
 const handleKeyDown = (event: KeyboardEvent) => {
   if (!isPickerOpen.value) return
-  if (event.key === 'Escape') {
+  if (event.key.toLocaleLowerCase() === 'escape') {
     event.preventDefault()
     closeDatePicker()
   }
