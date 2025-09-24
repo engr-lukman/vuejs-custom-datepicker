@@ -73,7 +73,7 @@
           <div class="flex items-center justify-between border-b border-gray-100 p-3">
             <button
               type="button"
-              @click="navigatePrevious"
+              @click="navigate('previous')"
               :disabled="!canNavigatePrevious"
               :aria-label="`Go to ${isMonthView ? 'previous year' : 'previous month'}`"
               class="hover:bg-primary-300 cursor-pointer rounded p-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
@@ -100,7 +100,7 @@
 
             <button
               type="button"
-              @click="navigateNext"
+              @click="navigate('next')"
               :disabled="!canNavigateNext"
               :aria-label="`Go to ${isMonthView ? 'next year' : 'next month'}`"
               class="hover:bg-primary-300 cursor-pointer rounded p-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
@@ -186,7 +186,10 @@
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 
 // ===== INTERFACES AND TYPES =====
-type YearMonth = { year: number; month: number }
+interface YearMonth {
+  year: number
+  month: number
+}
 
 interface DatePickerProps {
   modelValue?: (string | null)[] | string | null
@@ -819,32 +822,19 @@ const closePicker = (): void => {
   isOpen.value = false
 }
 
-const navigatePrevious = (): void => {
-  if (canNavigatePrevious.value) {
-    if (isMonthView.value) {
-      currentDate.value = new Date(currentDate.value.getFullYear() - 1, 0, 1)
-    } else {
-      currentDate.value = new Date(
-        currentDate.value.getFullYear(),
-        currentDate.value.getMonth() - 1,
-        1
-      )
-    }
-  }
-}
+const navigate = (direction: 'previous' | 'next'): void => {
+  const canNavigate = direction === 'previous' ? canNavigatePrevious.value : canNavigateNext.value
 
-const navigateNext = (): void => {
-  if (canNavigateNext.value) {
-    if (isMonthView.value) {
-      currentDate.value = new Date(currentDate.value.getFullYear() + 1, 0, 1)
-    } else {
-      currentDate.value = new Date(
-        currentDate.value.getFullYear(),
-        currentDate.value.getMonth() + 1,
-        1
-      )
-    }
-  }
+  if (!canNavigate) return
+
+  const yearOffset = isMonthView.value ? (direction === 'previous' ? -1 : 1) : 0
+  const monthOffset = !isMonthView.value ? (direction === 'previous' ? -1 : 1) : 0
+
+  currentDate.value = new Date(
+    currentDate.value.getFullYear() + yearOffset,
+    currentDate.value.getMonth() + monthOffset,
+    1
+  )
 }
 
 const handleClickOutside = (event: Event): void => {
@@ -862,17 +852,9 @@ const handleClickOutside = (event: Event): void => {
 const handleKeyDown = (event: KeyboardEvent): void => {
   if (!isOpen.value) return
 
-  switch (event.key) {
-    case 'Escape':
-      event.preventDefault()
-      closePicker()
-      break
-    case 'Tab':
-      // Allow normal tab behavior to close picker when focus leaves
-      if (!dropdown.value?.contains(event.target as Node)) {
-        closePicker()
-      }
-      break
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closePicker()
   }
 }
 
