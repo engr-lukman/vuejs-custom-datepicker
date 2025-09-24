@@ -20,10 +20,7 @@
       aria-modal="false"
       aria-label="Date picker"
       class="absolute top-full left-0 z-50 mt-1 rounded-lg border border-gray-200 bg-white shadow-lg"
-      :class="{
-        'w-xs': !showQuickSelection,
-        'w-sm': showQuickSelection,
-      }"
+      :class="{ 'w-xs': !showQuickSelection, 'w-sm': showQuickSelection }"
     >
       <div class="flex flex-col sm:flex-row">
         <div
@@ -141,21 +138,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import {
+  computed,
+  ref,
+  watch,
+  onMounted,
+  onUnmounted,
+  withDefaults,
+  defineProps,
+  defineEmits,
+} from 'vue'
 
 interface DateRange {
   start: Date | null
   end: Date | null
 }
-
 interface DatePickerProps {
-  modelValue?: (string | null)[] | string | null
+  modelValue?: string | string[] | null
   placeholder?: string
-  mode?: 'range' | 'single'
+  mode?: 'single' | 'range'
   minNavigation?: string | null
   maxNavigation?: string | null
 }
-
 interface DayData {
   date: Date
   day: number
@@ -165,7 +169,6 @@ interface DayData {
   isToday: boolean
   dateString: string
 }
-
 interface QuickSelectionOption {
   key: string
   label: string
@@ -189,51 +192,37 @@ const MONTH_NAMES = [
   'December',
 ]
 
-const startOfDay = (date: Date): Date => {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  return d
+const startOfDay = (d: Date): Date => {
+  const dt = new Date(d)
+  dt.setHours(0, 0, 0, 0)
+  return dt
 }
-
-const formatDate = (date: Date, format: 'YMD' | 'DMY' | 'MonYYYY'): string => {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  const monthName = MONTH_NAMES[date.getMonth()].slice(0, 3)
-  if (format === 'YMD') return `${y}-${m}-${d}`
-  if (format === 'DMY') return `${d}/${m}/${y}`
-  return `${monthName} ${y}`
+const formatDate = (d: Date, fmt: 'YMD' | 'DMY' | 'MonYYYY'): string => {
+  const y = d.getFullYear(),
+    m = String(d.getMonth() + 1).padStart(2, '0'),
+    day = String(d.getDate()).padStart(2, '0')
+  if (fmt === 'YMD') return `${y}-${m}-${day}`
+  if (fmt === 'DMY') return `${day}/${m}/${y}`
+  return `${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${y}`
 }
-
-const parseModelDate = (value?: string | null): Date | null => {
-  if (!value || typeof value !== 'string') return null
-  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/
-  if (ymd.test(value)) {
-    const [y, m, d] = value.split('-').map(Number)
-    const dt = new Date(y, m - 1, d)
-    return Number.isNaN(dt.getTime()) ? null : dt
-  }
-  const dt = new Date(value)
-  return Number.isNaN(dt.getTime()) ? null : dt
+const parseModelDate = (v?: string | null): Date | null => {
+  if (!v) return null
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v)
+  if (match) return new Date(+match[1], +match[2] - 1, +match[3])
+  const dt = new Date(v)
+  return isNaN(dt.getTime()) ? null : dt
 }
-
 const isSameDay = (a: Date, b: Date): boolean =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate()
-
-const isToday = (date: Date): boolean => isSameDay(date, new Date())
-
-const isWithinBounds = (
-  value: Date,
-  minNavigation?: string | null,
-  maxNavigation?: string | null
-): boolean => {
-  const minDate = minNavigation ? parseModelDate(minNavigation) : null
-  const maxDate = maxNavigation ? parseModelDate(maxNavigation) : null
-  const dateValue = startOfDay(value)
-  if (minDate && dateValue < startOfDay(minDate)) return false
-  if (maxDate && dateValue > startOfDay(maxDate)) return false
+const isToday = (d: Date): boolean => isSameDay(d, new Date())
+const isWithinBounds = (d: Date, min?: string | null, max?: string | null): boolean => {
+  const date = startOfDay(d)
+  const minDate = min ? startOfDay(parseModelDate(min)!) : null
+  const maxDate = max ? startOfDay(parseModelDate(max)!) : null
+  if (minDate && date < minDate) return false
+  if (maxDate && date > maxDate) return false
   return true
 }
 
@@ -243,201 +232,126 @@ const props = withDefaults(defineProps<DatePickerProps>(), {
   minNavigation: null,
   maxNavigation: null,
 })
-
-const emit = defineEmits<{
-  'update:modelValue': [value: (string | null)[] | string | null]
-}>()
+const emit = defineEmits<{ 'update:modelValue': [string | string[] | null] }>()
 
 const isOpen = ref(false)
 const datePickerRef = ref<HTMLInputElement | null>(null)
 const dropdown = ref<HTMLElement | null>(null)
-const selectedSingle = ref<Date | null>(null)
 const currentDate = ref(new Date())
+const selectedSingle = ref<Date | null>(null)
 const selectedRange = ref<DateRange>({ start: null, end: null })
 
 const isSingleMode = computed(() => props.mode === 'single')
-
-const placeholderText = computed(() =>
-  props.placeholder ? props.placeholder : isSingleMode.value ? 'Select date' : 'Select date range'
+const placeholderText = computed(
+  () => props.placeholder || (isSingleMode.value ? 'Select date' : 'Select date range')
 )
-
 const displayMonth = computed(() => MONTH_NAMES[currentDate.value.getMonth()])
 const displayYear = computed(() => currentDate.value.getFullYear())
 
 const canNavigatePrevious = computed(() => {
   if (!props.minNavigation) return true
-  const currentYear = currentDate.value.getFullYear()
-  const currentMonth = currentDate.value.getMonth()
-  const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1
-  const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear
-  const minDate = parseModelDate(props.minNavigation)
-  if (!minDate) return true
-  const minYear = minDate.getFullYear()
-  const minMonth = minDate.getMonth()
-  return prevYear > minYear || (prevYear === minYear && prevMonth >= minMonth)
+  const currYear = currentDate.value.getFullYear(),
+    currMonth = currentDate.value.getMonth()
+  const prevMonth = currMonth === 0 ? 11 : currMonth - 1,
+    prevYear = currMonth === 0 ? currYear - 1 : currYear
+  const min = parseModelDate(props.minNavigation)
+  if (!min) return true
+  return (
+    prevYear > min.getFullYear() || (prevYear === min.getFullYear() && prevMonth >= min.getMonth())
+  )
 })
-
 const canNavigateNext = computed(() => {
   if (!props.maxNavigation) return true
-  const currentYear = currentDate.value.getFullYear()
-  const currentMonth = currentDate.value.getMonth()
-  const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1
-  const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear
-  const maxDate = parseModelDate(props.maxNavigation)
-  if (!maxDate) return true
-  const maxYear = maxDate.getFullYear()
-  const maxMonth = maxDate.getMonth()
-  return nextYear < maxYear || (nextYear === maxYear && nextMonth <= maxMonth)
+  const currYear = currentDate.value.getFullYear(),
+    currMonth = currentDate.value.getMonth()
+  const nextMonth = currMonth === 11 ? 0 : currMonth + 1,
+    nextYear = currMonth === 11 ? currYear + 1 : currYear
+  const max = parseModelDate(props.maxNavigation)
+  if (!max) return true
+  return (
+    nextYear < max.getFullYear() || (nextYear === max.getFullYear() && nextMonth <= max.getMonth())
+  )
 })
 
-const displayValue = computed(() => {
-  if (isSingleMode.value) {
-    return selectedSingle.value ? formatDate(selectedSingle.value, 'DMY') : ''
-  }
-  if (selectedRange.value?.start && selectedRange.value?.end) {
-    return `${formatDate(selectedRange.value.start, 'DMY')} - ${formatDate(selectedRange.value.end, 'DMY')}`
-  }
-  return ''
-})
-
-const calendarDays = computed((): DayData[] => {
-  const year = currentDate.value.getFullYear()
-  const month = currentDate.value.getMonth()
-  const firstDay = new Date(year, month, 1)
-  const lastDay = new Date(year, month + 1, 0)
-  const firstDayOfWeek = firstDay.getDay()
-  const daysInMonth = lastDay.getDate()
-  const days: DayData[] = []
-  const prevMonthLastDay = new Date(year, month, 0).getDate()
-  for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-    const day = prevMonthLastDay - i
-    const date = new Date(year, month - 1, day)
-    days.push({
+// Optimized calendar days: single loop, 6 weeks (42 slots)
+const calendarDays = computed<DayData[]>(() => {
+  const year = currentDate.value.getFullYear(),
+    month = currentDate.value.getMonth()
+  const firstDayOfMonth = new Date(year, month, 1)
+  const firstWeekDay = firstDayOfMonth.getDay()
+  const startDate = new Date(year, month, 1 - firstWeekDay)
+  const days: DayData[] = Array.from({ length: 42 }).map((_, i) => {
+    const date = new Date(startDate)
+    date.setDate(startDate.getDate() + i)
+    return {
       date,
-      day,
-      month: month - 1,
-      year,
-      isCurrentMonth: false,
+      day: date.getDate(),
+      month: date.getMonth(),
+      year: date.getFullYear(),
+      isCurrentMonth: date.getMonth() === month,
       isToday: isToday(date),
-      dateString: `prev-${formatDate(date, 'YMD')}`,
-    })
-  }
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day)
-    days.push({
-      date,
-      day,
-      month,
-      year,
-      isCurrentMonth: true,
-      isToday: isToday(date),
-      dateString: `curr-${formatDate(date, 'YMD')}`,
-    })
-  }
-  const remainingSlots = 42 - days.length
-  for (let day = 1; day <= remainingSlots; day++) {
-    const date = new Date(year, month + 1, day)
-    days.push({
-      date,
-      day,
-      month: month + 1,
-      year,
-      isCurrentMonth: false,
-      isToday: isToday(date),
-      dateString: `next-${formatDate(date, 'YMD')}`,
-    })
-  }
+      dateString: `${date.getMonth() === month ? 'curr' : date < firstDayOfMonth ? 'prev' : 'next'}-${formatDate(date, 'YMD')}`,
+    }
+  })
   return days
 })
 
 const showQuickSelection = computed(() => !isSingleMode.value)
 
-const quickSelectionOptions = computed((): QuickSelectionOption[] => {
+const quickSelectionOptions = computed<QuickSelectionOption[]>(() => {
   const today = new Date()
-  const createDateRange = (start: Date, end: Date = today): string[] => [
+  const createRange = (start: Date, end: Date = today) => [
     formatDate(start, 'YMD'),
     formatDate(end, 'YMD'),
   ]
-  const daysAgo = (days: number): Date => {
-    const date = new Date(today)
-    date.setDate(today.getDate() - days)
-    return date
+  const daysAgo = (n: number) => {
+    const d = new Date(today)
+    d.setDate(today.getDate() - n)
+    return d
   }
-  const options = [
-    {
-      key: 'today',
-      label: 'Today',
-      getValue: () => createDateRange(today),
-    },
-    {
-      key: 'yesterday',
-      label: 'Yesterday',
-      getValue: () => {
-        const yesterday = daysAgo(1)
-        return createDateRange(yesterday, yesterday)
-      },
-    },
-    {
-      key: 'last30days',
-      label: 'Last 30 days',
-      getValue: () => createDateRange(daysAgo(29)),
-    },
+  const opts: QuickSelectionOption[] = [
+    { key: 'today', label: 'Today', getValue: () => createRange(today) },
+    { key: 'yesterday', label: 'Yesterday', getValue: () => createRange(daysAgo(1), daysAgo(1)) },
+    { key: 'last30days', label: 'Last 30 days', getValue: () => createRange(daysAgo(29)) },
     {
       key: 'thismonth',
       label: 'This month',
-      getValue: () => createDateRange(new Date(today.getFullYear(), today.getMonth(), 1)),
+      getValue: () => createRange(new Date(today.getFullYear(), today.getMonth(), 1)),
     },
-    {
-      key: 'last180days',
-      label: 'Last 6 months',
-      getValue: () => createDateRange(daysAgo(179)),
-    },
+    { key: 'last180days', label: 'Last 6 months', getValue: () => createRange(daysAgo(179)) },
   ]
-  return options
-    .filter((option) => {
-      if (!props.minNavigation) return true
-      const [startDateStr] = option.getValue()
-      return isWithinBounds(new Date(startDateStr), props.minNavigation, props.maxNavigation)
-    })
-    .map((option) => ({ ...option, isEnabled: true }))
+  return opts.map((o) => ({ ...o, isEnabled: true }))
 })
 
 const isDateSelectable = (date: Date): boolean =>
   isWithinBounds(date, props.minNavigation, props.maxNavigation)
-
 const isDateInSelectedRange = (date: Date): boolean =>
   !!(
-    selectedRange.value?.start &&
-    selectedRange.value?.end &&
+    selectedRange.value.start &&
+    selectedRange.value.end &&
     date >= selectedRange.value.start &&
     date <= selectedRange.value.end
   )
-
 const isRangeStart = (date: Date): boolean =>
-  !!(selectedRange.value?.start && isSameDay(date, selectedRange.value.start))
-
+  !!(selectedRange.value.start && isSameDay(date, selectedRange.value.start))
 const isRangeEnd = (date: Date): boolean =>
-  !!(selectedRange.value?.end && isSameDay(date, selectedRange.value.end))
-
+  !!(selectedRange.value.end && isSameDay(date, selectedRange.value.end))
 const isSingleSelected = (date: Date): boolean =>
   !!(selectedSingle.value && isSameDay(date, selectedSingle.value))
 
-const getDayClasses = (dayData: DayData): string => {
-  if (!dayData.isCurrentMonth || !isDateSelectable(dayData.date)) {
+const getDayClasses = (day: DayData): string => {
+  if (!day.isCurrentMonth || !isDateSelectable(day.date)) {
     return 'text-gray-400 cursor-not-allowed'
   }
-  let classes = 'text-gray-900 hover:bg-primary-300'
-  if (dayData.isToday) classes += ' border border-primary-300'
+  let cls = 'text-gray-900 hover:bg-primary-300'
+  if (day.isToday) cls += ' border border-primary-300'
   if (isSingleMode.value) {
-    if (isSingleSelected(dayData.date)) classes += ' bg-primary-700 text-white'
+    if (isSingleSelected(day.date)) cls += ' bg-primary-700 text-white'
   } else {
-    if (isRangeStart(dayData.date) || isRangeEnd(dayData.date)) {
-      classes += ' bg-primary-700 text-white'
-    } else if (isDateInSelectedRange(dayData.date)) {
-      classes += ' bg-primary-300 text-white'
-    }
+    if (isRangeStart(day.date) || isRangeEnd(day.date)) cls += ' bg-primary-700 text-white'
+    else if (isDateInSelectedRange(day.date)) cls += ' bg-primary-300 text-white'
   }
-  return classes
+  return cls
 }
 
 const handleDateClick = (date: Date): void => {
@@ -447,42 +361,37 @@ const handleDateClick = (date: Date): void => {
     emit('update:modelValue', formatDate(date, 'YMD'))
     isOpen.value = false
   } else {
-    if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
+    if (!selectedRange.value.start || (selectedRange.value.start && selectedRange.value.end)) {
       selectedRange.value = { start: date, end: null }
-    } else if (selectedRange.value?.start && !selectedRange.value?.end) {
-      const startDate = date < selectedRange.value.start ? date : selectedRange.value.start
-      const endDate = date < selectedRange.value.start ? selectedRange.value.start : date
-      selectedRange.value = { start: startDate, end: endDate }
-      emit('update:modelValue', [formatDate(startDate, 'YMD'), formatDate(endDate, 'YMD')])
+    } else if (selectedRange.value.start && !selectedRange.value.end) {
+      const start = date < selectedRange.value.start ? date : selectedRange.value.start
+      const end = date < selectedRange.value.start ? selectedRange.value.start : date
+      selectedRange.value = { start, end }
+      emit('update:modelValue', [formatDate(start, 'YMD'), formatDate(end, 'YMD')])
       isOpen.value = false
     }
   }
 }
 
 const clearSelection = (): void => {
-  if (isSingleMode.value) {
-    selectedSingle.value = null
-  } else {
-    selectedRange.value = { start: null, end: null }
-  }
+  if (isSingleMode.value) selectedSingle.value = null
+  else selectedRange.value = { start: null, end: null }
   emit('update:modelValue', null)
   isOpen.value = false
 }
 
 const handleQuickSelection = (option: QuickSelectionOption): void => {
   const value = option.getValue()
-  const startDate = new Date(value[0])
-  const endDate = new Date(value[1])
-  selectedRange.value = { start: startDate, end: endDate }
+  selectedRange.value = { start: new Date(value[0]), end: new Date(value[1]) }
   emit('update:modelValue', value)
   isOpen.value = false
 }
 
 const getQuickSelectionClasses = (option: QuickSelectionOption): string => {
   const value = option.getValue()
-  const currentValue = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
-  const isSelected = currentValue[0] === value[0] && currentValue[1] === value[1]
-  return isSelected
+  const current = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
+  const selected = current[0] === value[0] && current[1] === value[1]
+  return selected
     ? 'bg-primary-700 text-white font-medium shadow-sm'
     : 'text-gray-700 hover:bg-primary-300 hover:text-primary-700'
 }
@@ -490,66 +399,58 @@ const getQuickSelectionClasses = (option: QuickSelectionOption): string => {
 const togglePicker = (): void => {
   isOpen.value = !isOpen.value
 }
-
 const closePicker = (): void => {
   isOpen.value = false
 }
 
-const navigate = (direction: 'previous' | 'next'): void => {
-  const canNavigate = direction === 'previous' ? canNavigatePrevious.value : canNavigateNext.value
-  if (!canNavigate) return
-  const monthOffset = direction === 'previous' ? -1 : 1
+const navigate = (dir: 'previous' | 'next'): void => {
+  const canMove = dir === 'previous' ? canNavigatePrevious.value : canNavigateNext.value
+  if (!canMove) return
+  const offset = dir === 'previous' ? -1 : 1
   currentDate.value = new Date(
     currentDate.value.getFullYear(),
-    currentDate.value.getMonth() + monthOffset,
+    currentDate.value.getMonth() + offset,
     1
   )
 }
 
-const handleClickOutside = (event: Event): void => {
-  const target = event.target as Node
+const handleClickOutside = (e: Event): void => {
+  const t = e.target as Node
   if (
     dropdown.value &&
-    !dropdown.value.contains(target) &&
+    !dropdown.value.contains(t) &&
     datePickerRef.value &&
-    !datePickerRef.value.contains(target)
+    !datePickerRef.value.contains(t)
   ) {
     closePicker()
   }
 }
 
-const handleKeyDown = (event: KeyboardEvent): void => {
+const handleKeyDown = (e: KeyboardEvent): void => {
   if (!isOpen.value) return
-  if (event.key === 'Escape') {
-    event.preventDefault()
+  if (e.key === 'Escape') {
+    e.preventDefault()
     closePicker()
   }
 }
 
 watch(
   () => props.modelValue,
-  (newValue) => {
+  (v) => {
     if (isSingleMode.value) {
-      if (typeof newValue === 'string' && newValue) {
-        const parsed = parseModelDate(newValue)
-        selectedSingle.value = parsed ? startOfDay(parsed) : null
-      } else {
-        selectedSingle.value = null
-      }
+      if (typeof v === 'string' && v) {
+        const p = parseModelDate(v)
+        selectedSingle.value = p ? startOfDay(p) : null
+      } else selectedSingle.value = null
     } else {
-      if (!newValue || !Array.isArray(newValue)) {
+      if (!v || !Array.isArray(v)) {
         selectedRange.value = { start: null, end: null }
         return
       }
-      if (newValue.length >= 2) {
-        const s = newValue[0]
-        const e = newValue[1]
-        const sParsed = s ? parseModelDate(s) : null
-        const eParsed = e ? parseModelDate(e) : null
-        selectedRange.value = {
-          start: sParsed ? startOfDay(sParsed) : null,
-          end: eParsed ? startOfDay(eParsed) : null,
-        }
+      if (v.length >= 2) {
+        const s = parseModelDate(v[0]),
+          e = parseModelDate(v[1])
+        selectedRange.value = { start: s ? startOfDay(s) : null, end: e ? startOfDay(e) : null }
       } else {
         selectedRange.value = { start: null, end: null }
       }
@@ -562,9 +463,15 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('keydown', handleKeyDown)
 })
-
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleKeyDown)
+})
+
+const displayValue = computed(() => {
+  if (isSingleMode.value) return selectedSingle.value ? formatDate(selectedSingle.value, 'DMY') : ''
+  if (selectedRange.value.start && selectedRange.value.end)
+    return `${formatDate(selectedRange.value.start, 'DMY')} - ${formatDate(selectedRange.value.end, 'DMY')}`
+  return ''
 })
 </script>
