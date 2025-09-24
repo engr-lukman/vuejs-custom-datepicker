@@ -3,9 +3,9 @@
     <div class="mx-auto max-w-6xl">
       <!-- Application Header -->
       <header class="mb-12 text-center">
-        <h1 class="text-3xl font-bold text-gray-900 sm:text-4xl">Custom Date Picker</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Custom Date/Month Picker</h1>
         <p class="mt-4 text-lg text-gray-600">
-          A flexible Vue.js date picker component with single and range selection modes
+          A flexible Vue.js date/month picker component with single and range selection modes
         </p>
       </header>
 
@@ -18,11 +18,10 @@
             <p class="text-sm text-gray-600">Select a single date</p>
           </header>
           <DatePicker
-            v-model="selectedSingleDate"
             mode="single"
+            v-model="selectedSingleDate"
             :min-navigation="dateConfig.minNavigation"
             :max-navigation="dateConfig.maxNavigation"
-            aria-label="Select single date"
           />
           <div v-if="selectedSingleDate" class="mt-4 rounded bg-gray-50 p-3 text-sm">
             <strong>Selected:</strong> {{ selectedSingleDate }}
@@ -39,7 +38,6 @@
             v-model="selectedDateRange"
             :min-navigation="dateConfig.minNavigation"
             :max-navigation="dateConfig.maxNavigation"
-            aria-label="Select date range"
           />
           <div
             v-if="selectedDateRange?.[0] || selectedDateRange?.[1]"
@@ -61,7 +59,6 @@
             v-model="selectedExtendedRange"
             :min-navigation="extendedConfig.minNavigation"
             :max-navigation="extendedConfig.maxNavigation"
-            aria-label="Select extended date range"
           />
           <div
             v-if="selectedExtendedRange?.[0] || selectedExtendedRange?.[1]"
@@ -79,13 +76,10 @@
             <h2 class="text-lg font-semibold text-gray-900">Single Month</h2>
             <p class="text-sm text-gray-600">Select a single month</p>
           </header>
-          <DatePicker
+          <MonthPicker
             v-model="selectedSingleMonth"
-            view="month"
-            mode="single"
             :min-navigation="monthConfig.minNavigation"
             :max-navigation="monthConfig.maxNavigation"
-            aria-label="Select single month"
           />
           <div v-if="selectedSingleMonth" class="mt-4 rounded bg-gray-50 p-3 text-sm">
             <strong>Selected:</strong> {{ selectedSingleMonth }}
@@ -98,12 +92,11 @@
             <h2 class="text-lg font-semibold text-gray-900">Month Range</h2>
             <p class="text-sm text-gray-600">Select a range of months</p>
           </header>
-          <DatePicker
+          <MonthPicker
+            mode="range"
             v-model="selectedMonthRange"
-            view="month"
             :min-navigation="monthConfig.minNavigation"
             :max-navigation="monthConfig.maxNavigation"
-            aria-label="Select month range"
           />
           <div
             v-if="selectedMonthRange?.[0] || selectedMonthRange?.[1]"
@@ -121,13 +114,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import DatePicker from '@/components/DatePicker.vue'
 
-// Types
+import DatePicker from '@/components/DatePicker.vue'
+import MonthPicker from '@/components/MonthPicker.vue'
+
 type SelectedDateRange = string[] | null
 type SelectedSingleValue = string | null
 
-// Helper functions
 const formatDateToString = (date: Date): string => {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -168,7 +161,6 @@ const dateConfig = createDateConfig(29) // Last 30 days
 const monthConfig = createMonthConfig(5) // Last 5 months
 const extendedConfig = createDateConfig(180) // Last 6 months
 
-// Reactive state
 const selectedDateRange = ref<SelectedDateRange>(null)
 const selectedSingleDate = ref<SelectedSingleValue>(null)
 const selectedMonthRange = ref<SelectedDateRange>(null)

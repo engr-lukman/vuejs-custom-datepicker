@@ -13,8 +13,6 @@
       aria-haspopup="dialog"
       class="focus:ring-primary-500 focus:border-primary-500 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 transition-colors duration-200 hover:border-gray-400 focus:ring-1 focus:outline-none"
     />
-
-    <!-- Calendar Icon -->
     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
       <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
@@ -25,22 +23,18 @@
         />
       </svg>
     </div>
-
-    <!-- Dropdown Panel -->
     <div
       v-if="isOpen"
       ref="dropdown"
       role="dialog"
       aria-modal="false"
       aria-label="Date picker"
-      class="absolute top-full left-0 z-50 mt-1 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white shadow-lg"
-      :class="showQuickSelection ? 'w-md' : 'w-xs'"
+      class="absolute top-full left-0 z-50 mt-1 w-sm rounded-lg border border-gray-200 bg-white shadow-lg"
     >
       <div class="flex">
-        <!-- Quick Selection Sidebar -->
         <div
           v-if="showQuickSelection"
-          class="w-32 border-r border-gray-100 bg-gradient-to-b from-gray-50 to-gray-100"
+          class="w-28 border-r border-gray-100 bg-gradient-to-b from-gray-50 to-gray-100"
           role="region"
           aria-label="Quick date selection options"
         >
@@ -66,16 +60,13 @@
             </div>
           </div>
         </div>
-
-        <!-- Main Calendar Content -->
         <div class="flex-1">
-          <!-- Calendar Header -->
           <div class="flex items-center justify-between border-b border-gray-100 p-3">
             <button
               type="button"
               @click="navigate('previous')"
               :disabled="!canNavigatePrevious"
-              :aria-label="`Go to ${isMonthView ? 'previous year' : 'previous month'}`"
+              aria-label="Go to previous month"
               class="hover:bg-primary-300 cursor-pointer rounded p-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg
@@ -93,16 +84,14 @@
                 />
               </svg>
             </button>
-
             <h2 class="text-sm font-medium text-gray-900" aria-live="polite">
-              {{ isMonthView ? displayYear : `${displayMonth} ${displayYear}` }}
+              {{ `${displayMonth} ${displayYear}` }}
             </h2>
-
             <button
               type="button"
               @click="navigate('next')"
               :disabled="!canNavigateNext"
-              :aria-label="`Go to ${isMonthView ? 'next year' : 'next month'}`"
+              aria-label="Go to next month"
               class="hover:bg-primary-300 cursor-pointer rounded p-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg
@@ -121,26 +110,7 @@
               </svg>
             </button>
           </div>
-
-          <!-- Month View -->
-          <div v-if="isMonthView" class="p-3">
-            <div class="grid grid-cols-3 gap-2">
-              <button
-                v-for="monthData in monthGrid"
-                :key="monthData.month"
-                :disabled="!isMonthSelectable(displayYear, monthData.month)"
-                @click="handleMonthClick(monthData)"
-                :class="getMonthClasses(monthData)"
-                class="hover:bg-primary-300 relative cursor-pointer rounded px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {{ monthData.shortName }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Date View -->
-          <div v-else class="p-3">
-            <!-- Day headers -->
+          <div class="p-3">
             <div class="mb-2 grid grid-cols-7 gap-2">
               <div
                 v-for="day in DAY_NAMES"
@@ -150,8 +120,6 @@
                 {{ day }}
               </div>
             </div>
-
-            <!-- Date grid -->
             <div class="grid grid-cols-7 gap-2">
               <button
                 v-for="dayData in calendarDays"
@@ -165,8 +133,6 @@
               </button>
             </div>
           </div>
-
-          <!-- Footer -->
           <div class="flex justify-end border-t border-gray-100 p-1.5">
             <button
               @click="clearSelection"
@@ -182,24 +148,16 @@
 </template>
 
 <script setup lang="ts">
-// ===== IMPORTS =====
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 
-// ===== INTERFACES AND TYPES =====
 interface DateRange {
   start: Date | null
   end: Date | null
 }
 
-interface YearMonth {
-  year: number
-  month: number
-}
-
 interface DatePickerProps {
   modelValue?: (string | null)[] | string | null
   placeholder?: string
-  view?: 'date' | 'month'
   mode?: 'range' | 'single'
   minNavigation?: string | null
   maxNavigation?: string | null
@@ -215,14 +173,6 @@ interface DayData {
   dateString: string
 }
 
-interface MonthData {
-  month: number
-  name: string
-  shortName: string
-  date: string
-  isCurrentMonth: boolean
-}
-
 interface QuickSelectionOption {
   key: string
   label: string
@@ -230,7 +180,6 @@ interface QuickSelectionOption {
   isEnabled?: boolean
 }
 
-// ===== CONSTANTS =====
 const DAY_NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 const MONTH_NAMES = [
   'January',
@@ -247,153 +196,71 @@ const MONTH_NAMES = [
   'December',
 ]
 
-// ===== UTILITY FUNCTIONS =====
-
-// ----- Date Creation and Manipulation -----
-/** Normalizes a Date to start of day */
 const startOfDay = (date: Date): Date => {
   const d = new Date(date)
   d.setHours(0, 0, 0, 0)
   return d
 }
 
-/** Creates a Date for a specific year and month (day will be the 1st) */
-const createYearMonthDate = (year: number, month: number): Date => new Date(year, month, 1)
-
-/** Converts a Date to a YearMonth object */
-const toYearMonth = (date: Date): YearMonth => ({
-  year: date.getFullYear(),
-  month: date.getMonth(),
-})
-
-// ----- Date Formatting and Parsing -----
-/** Format a date to various string formats */
-const formatDate = (date: Date, format: 'YMD' | 'DMY' | 'YM' | 'MonYYYY'): string => {
+const formatDate = (date: Date, format: 'YMD' | 'DMY' | 'MonYYYY'): string => {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
   const monthName = MONTH_NAMES[date.getMonth()].slice(0, 3)
-
   switch (format) {
     case 'YMD':
       return `${y}-${m}-${d}`
     case 'DMY':
       return `${d}/${m}/${y}`
-    case 'YM':
-      return `${y}-${m}`
     case 'MonYYYY':
       return `${monthName} ${y}`
   }
 }
 
-/** Parses model date string (YYYY-MM-DD or YYYY-MM) to Date */
 const parseModelDate = (value?: string | null): Date | null => {
   if (!value || typeof value !== 'string') return null
-
   const ymd = /^(\d{4})-(\d{2})-(\d{2})$/
-  const ym = /^(\d{4})-(\d{2})$/
-
   if (ymd.test(value)) {
     const [y, m, d] = value.split('-').map(Number)
     const dt = new Date(y, m - 1, d)
     return Number.isNaN(dt.getTime()) ? null : dt
   }
-
-  if (ym.test(value)) {
-    const [y, m] = value.split('-').map(Number)
-    const dt = new Date(y, m - 1, 1)
-    return Number.isNaN(dt.getTime()) ? null : dt
-  }
-
   const dt = new Date(value)
   return Number.isNaN(dt.getTime()) ? null : dt
 }
 
-// ----- Date Comparison -----
-/** Compare two dates for equality (ignoring time) */
 const isSameDay = (a: Date, b: Date): boolean =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate()
 
-/** Check if a date is today */
 const isToday = (date: Date): boolean => isSameDay(date, new Date())
 
-/** Compare two YearMonth objects */
-const compareYearMonth = (a: YearMonth, b: YearMonth): number => {
-  if (a.year !== b.year) return a.year < b.year ? -1 : 1
-  return a.month - b.month
-}
-
-/** Check if a month is the current month */
-const isCurrentMonth = (year: number, month: number): boolean => {
-  const today = new Date()
-  return year === today.getFullYear() && month === today.getMonth()
-}
-
-// ----- Navigation Boundary Checks -----
-/**
- * Check if a value is within navigation boundaries
- * @param value - Date or YearMonth to check
- * @param minNavigation - Minimum navigation boundary
- * @param maxNavigation - Maximum navigation boundary
- * @param mode - Comparison mode ('date' or 'month')
- */
 const isWithinBounds = (
-  value: Date | YearMonth,
+  value: Date,
   minNavigation?: string | null,
-  maxNavigation?: string | null,
-  mode: 'date' | 'month' = 'date'
+  maxNavigation?: string | null
 ): boolean => {
-  // Parse boundary dates
   const minDate = minNavigation ? parseModelDate(minNavigation) : null
   const maxDate = maxNavigation ? parseModelDate(maxNavigation) : null
-
   if (!minDate && !maxDate) return true
-
-  // Handle date comparison
-  if (mode === 'date' && value instanceof Date) {
-    const dateValue = startOfDay(value)
-    if (minDate && dateValue < startOfDay(minDate)) return false
-    if (maxDate && dateValue > startOfDay(maxDate)) return false
-    return true
-  }
-
-  // Handle month comparison
-  const yearMonth = value instanceof Date ? toYearMonth(value) : (value as YearMonth)
-  if (minDate && compareYearMonth(yearMonth, toYearMonth(minDate)) < 0) return false
-  if (maxDate && compareYearMonth(yearMonth, toYearMonth(maxDate)) > 0) return false
-
+  const dateValue = startOfDay(value)
+  if (minDate && dateValue < startOfDay(minDate)) return false
+  if (maxDate && dateValue > startOfDay(maxDate)) return false
   return true
 }
 
-/** Check if a date is within the navigation boundaries */
-const isDateWithinBounds = (
-  date: Date,
-  minNavigation?: string | null,
-  maxNavigation?: string | null
-): boolean => isWithinBounds(date, minNavigation, maxNavigation, 'date')
-
-/** Check if a year/month is within the navigation boundaries */
-const isMonthWithinBounds = (
-  ym: YearMonth,
-  minNavigation?: string | null,
-  maxNavigation?: string | null
-): boolean => isWithinBounds(ym, minNavigation, maxNavigation, 'month') // ===== PROPS =====
 const props = withDefaults(defineProps<DatePickerProps>(), {
   placeholder: '',
-  view: 'date',
   mode: 'range',
   minNavigation: null,
   maxNavigation: null,
 })
 
-// ===== EMITS =====
 const emit = defineEmits<{
   'update:modelValue': [value: (string | null)[] | string | null]
 }>()
 
-// ===== REFS =====
 const isOpen = ref(false)
 const datePickerRef = ref<HTMLInputElement | null>(null)
 const dropdown = ref<HTMLElement | null>(null)
@@ -401,18 +268,11 @@ const selectedSingle = ref<Date | null>(null)
 const currentDate = ref(new Date())
 const selectedRange = ref<DateRange>({ start: null, end: null })
 
-// ===== COMPUTED PROPERTIES =====
-const isMonthView = computed(() => props.view === 'month')
 const isSingleMode = computed(() => props.mode === 'single')
 
 const placeholderText = computed(() => {
   if (props.placeholder) return props.placeholder
-
-  if (isSingleMode.value) {
-    return isMonthView.value ? 'Select month' : 'Select date'
-  } else {
-    return isMonthView.value ? 'Select month range' : 'Select date range'
-  }
+  return isSingleMode.value ? 'Select date' : 'Select date range'
 })
 
 const displayMonth = computed(() => MONTH_NAMES[currentDate.value.getMonth()])
@@ -420,86 +280,52 @@ const displayYear = computed(() => currentDate.value.getFullYear())
 
 const canNavigatePrevious = computed(() => {
   if (!props.minNavigation) return true
-
   const currentYear = currentDate.value.getFullYear()
   const currentMonth = currentDate.value.getMonth()
-
-  if (isMonthView.value) {
-    const minDate = parseModelDate(props.minNavigation)
-    return minDate ? currentYear - 1 >= minDate.getFullYear() : true
-  } else {
-    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1
-    const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear
-    const minDate = parseModelDate(props.minNavigation)
-
-    if (!minDate) return true
-    const minYear = minDate.getFullYear()
-    const minMonth = minDate.getMonth()
-
-    return prevYear > minYear || (prevYear === minYear && prevMonth >= minMonth)
-  }
+  const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1
+  const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear
+  const minDate = parseModelDate(props.minNavigation)
+  if (!minDate) return true
+  const minYear = minDate.getFullYear()
+  const minMonth = minDate.getMonth()
+  return prevYear > minYear || (prevYear === minYear && prevMonth >= minMonth)
 })
 
 const canNavigateNext = computed(() => {
   if (!props.maxNavigation) return true
-
   const currentYear = currentDate.value.getFullYear()
   const currentMonth = currentDate.value.getMonth()
-
-  if (isMonthView.value) {
-    const maxDate = parseModelDate(props.maxNavigation)
-    return maxDate ? currentYear + 1 <= maxDate.getFullYear() : true
-  } else {
-    const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1
-    const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear
-    const maxDate = parseModelDate(props.maxNavigation)
-
-    if (!maxDate) return true
-    const maxYear = maxDate.getFullYear()
-    const maxMonth = maxDate.getMonth()
-
-    return nextYear < maxYear || (nextYear === maxYear && nextMonth <= maxMonth)
-  }
+  const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1
+  const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear
+  const maxDate = parseModelDate(props.maxNavigation)
+  if (!maxDate) return true
+  const maxYear = maxDate.getFullYear()
+  const maxMonth = maxDate.getMonth()
+  return nextYear < maxYear || (nextYear === maxYear && nextMonth <= maxMonth)
 })
 
 const displayValue = computed(() => {
   if (isSingleMode.value) {
-    // Single mode
     if (selectedSingle.value) {
-      return isMonthView.value
-        ? formatDate(selectedSingle.value, 'MonYYYY')
-        : formatDate(selectedSingle.value, 'DMY')
+      return formatDate(selectedSingle.value, 'DMY')
     }
     return ''
   } else {
-    // Range mode
-    if (isMonthView.value) {
-      if (selectedRange.value?.start && selectedRange.value?.end) {
-        return `${formatDate(selectedRange.value.start, 'MonYYYY')} - ${formatDate(selectedRange.value.end, 'MonYYYY')}`
-      }
-      return ''
-    } else {
-      if (selectedRange.value?.start && selectedRange.value?.end) {
-        return `${formatDate(selectedRange.value.start, 'DMY')} - ${formatDate(selectedRange.value.end, 'DMY')}`
-      }
-      return ''
+    if (selectedRange.value?.start && selectedRange.value?.end) {
+      return `${formatDate(selectedRange.value.start, 'DMY')} - ${formatDate(selectedRange.value.end, 'DMY')}`
     }
+    return ''
   }
 })
 
 const calendarDays = computed((): DayData[] => {
   const year = currentDate.value.getFullYear()
   const month = currentDate.value.getMonth()
-
-  // Get first and last day of current month
   const firstDay = new Date(year, month, 1)
   const lastDay = new Date(year, month + 1, 0)
   const firstDayOfWeek = firstDay.getDay()
   const daysInMonth = lastDay.getDate()
-
   const days: DayData[] = []
-
-  // Add previous month days to fill the first week
   const prevMonthLastDay = new Date(year, month, 0).getDate()
   for (let i = firstDayOfWeek - 1; i >= 0; i--) {
     const day = prevMonthLastDay - i
@@ -514,8 +340,6 @@ const calendarDays = computed((): DayData[] => {
       dateString: `prev-${formatDate(date, 'YMD')}`,
     })
   }
-
-  // Add current month days
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day)
     days.push({
@@ -528,8 +352,6 @@ const calendarDays = computed((): DayData[] => {
       dateString: `curr-${formatDate(date, 'YMD')}`,
     })
   }
-
-  // Add next month days to fill remaining slots (ensuring 6 weeks = 42 days)
   const remainingSlots = 42 - days.length
   for (let day = 1; day <= remainingSlots; day++) {
     const date = new Date(year, month + 1, day)
@@ -543,38 +365,22 @@ const calendarDays = computed((): DayData[] => {
       dateString: `next-${formatDate(date, 'YMD')}`,
     })
   }
-
   return days
 })
 
-const monthGrid = computed((): MonthData[] => {
-  return MONTH_NAMES.map((name, index) => ({
-    month: index,
-    name,
-    shortName: name.slice(0, 3),
-    date: formatDate(createYearMonthDate(displayYear.value, index), 'YM'),
-    isCurrentMonth: isCurrentMonth(displayYear.value, index),
-  }))
-})
-
-const showQuickSelection = computed(() => !isMonthView.value && !isSingleMode.value)
+const showQuickSelection = computed(() => !isSingleMode.value)
 
 const quickSelectionOptions = computed((): QuickSelectionOption[] => {
   const today = new Date()
-
-  // Helper function to create date range strings
   const createDateRange = (start: Date, end: Date = today): string[] => [
     formatDate(start, 'YMD'),
     formatDate(end, 'YMD'),
   ]
-
-  // Helper to create relative date (days ago)
   const daysAgo = (days: number): Date => {
     const date = new Date(today)
     date.setDate(today.getDate() - days)
     return date
   }
-
   const options = [
     {
       key: 'today',
@@ -605,25 +411,18 @@ const quickSelectionOptions = computed((): QuickSelectionOption[] => {
       getValue: () => createDateRange(daysAgo(179)),
     },
   ]
-
-  // Filter based on navigation constraints
   return options
     .filter((option) => {
       if (!props.minNavigation) return true
       const [startDateStr] = option.getValue()
-      return isDateWithinBounds(new Date(startDateStr), props.minNavigation, props.maxNavigation)
+      return isWithinBounds(new Date(startDateStr), props.minNavigation, props.maxNavigation)
     })
     .map((option) => ({ ...option, isEnabled: true }))
 })
 
-// ===== BUSINESS LOGIC HELPERS =====
 const isDateSelectable = (date: Date): boolean =>
-  isDateWithinBounds(date, props.minNavigation, props.maxNavigation)
+  isWithinBounds(date, props.minNavigation, props.maxNavigation)
 
-const isMonthSelectable = (year: number, month: number): boolean =>
-  isMonthWithinBounds({ year, month }, props.minNavigation, props.maxNavigation)
-
-// Range selection helpers
 const isDateInSelectedRange = (date: Date): boolean =>
   !!(
     selectedRange.value?.start &&
@@ -641,164 +440,44 @@ const isRangeEnd = (date: Date): boolean =>
 const isSingleSelected = (date: Date): boolean =>
   !!(selectedSingle.value && isSameDay(date, selectedSingle.value))
 
-// Month selection helpers
-const isMonthSelected = (monthString: string): boolean => {
-  if (isSingleMode.value) {
-    return typeof props.modelValue === 'string' && props.modelValue === monthString
-  }
-  const values = Array.isArray(props.modelValue) ? props.modelValue : []
-  return values.includes(monthString)
-}
-
-const isMonthInSelectedRange = (monthString: string): boolean => {
-  if (isSingleMode.value) return false
-  const values = Array.isArray(props.modelValue) ? props.modelValue : []
-  return (
-    values.length >= 2 &&
-    !!values[0] &&
-    !!values[1] &&
-    monthString > values[0] &&
-    monthString < values[1]
-  )
-}
-
-const isMonthRangeStart = (monthString: string): boolean => {
-  if (isSingleMode.value) return false
-  const values = Array.isArray(props.modelValue) ? props.modelValue : []
-  return values[0] === monthString
-}
-
-const isMonthRangeEnd = (monthString: string): boolean => {
-  if (isSingleMode.value) return false
-  const values = Array.isArray(props.modelValue) ? props.modelValue : []
-  return values[1] === monthString
-}
-
 const getDayClasses = (dayData: DayData): string => {
   const classes = []
-
-  // Handle non-current month days and non-selectable dates
   if (!dayData.isCurrentMonth || !isDateSelectable(dayData.date)) {
     classes.push('text-gray-400 cursor-not-allowed')
     return classes.join(' ')
   }
-
-  // Base classes for selectable dates
   classes.push('text-gray-900 hover:bg-primary-300')
-
-  // Today indicator
   if (dayData.isToday) {
     classes.push('border border-primary-300')
   }
-
   if (isSingleMode.value) {
-    // Single mode styling
     if (isSingleSelected(dayData.date)) {
       classes.push('bg-primary-700 text-white')
     }
   } else {
-    // Range selection styling
     if (isRangeStart(dayData.date) || isRangeEnd(dayData.date)) {
       classes.push('bg-primary-700 text-white')
     } else if (isDateInSelectedRange(dayData.date)) {
       classes.push('bg-primary-300 text-white')
     }
   }
-
   return classes.join(' ')
 }
 
-const getMonthClasses = (monthData: MonthData): string => {
-  if (!isMonthSelectable(displayYear.value, monthData.month)) {
-    return 'text-gray-400 cursor-not-allowed'
-  }
-
-  const isSelected = isMonthSelected(monthData.date)
-
-  if (isSingleMode.value) {
-    // Single mode styling
-    if (isSelected) {
-      return 'bg-primary-700 text-white font-medium shadow-md'
-    } else if (monthData.isCurrentMonth) {
-      return 'border border-primary-300 text-primary-800 font-medium'
-    } else {
-      return 'text-gray-700 hover:bg-primary-300'
-    }
-  } else {
-    // Range mode styling
-    const isInRange = isMonthInSelectedRange(monthData.date)
-    const isRangeStart = isMonthRangeStart(monthData.date)
-    const isRangeEnd = isMonthRangeEnd(monthData.date)
-
-    if (isRangeStart || isRangeEnd) {
-      return 'bg-primary-700 text-white font-medium shadow-md'
-    } else if (isSelected) {
-      return 'bg-primary-700 text-white font-medium shadow-md'
-    } else if (isInRange) {
-      return 'bg-primary-300 text-white border border-primary-400'
-    } else if (monthData.isCurrentMonth) {
-      return 'border border-primary-300 text-primary-800 font-medium'
-    } else {
-      return 'text-gray-700 hover:bg-primary-300'
-    }
-  }
-}
-
-// Event Handlers
 const handleDateClick = (date: Date): void => {
   if (!isDateSelectable(date)) return
-
   if (isSingleMode.value) {
-    // Single mode logic
     selectedSingle.value = date
-    emit(
-      'update:modelValue',
-      isMonthView.value
-        ? formatDate(createYearMonthDate(date.getFullYear(), date.getMonth()), 'YM')
-        : formatDate(date, 'YMD')
-    )
+    emit('update:modelValue', formatDate(date, 'YMD'))
     isOpen.value = false
   } else {
-    // Range selection logic
     if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
-      // Start new range
       selectedRange.value = { start: date, end: null }
     } else if (selectedRange.value?.start && !selectedRange.value?.end) {
-      // Complete the range - auto-swap if needed
       const startDate = date < selectedRange.value.start ? date : selectedRange.value.start
       const endDate = date < selectedRange.value.start ? selectedRange.value.start : date
-
       selectedRange.value = { start: startDate, end: endDate }
       emit('update:modelValue', [formatDate(startDate, 'YMD'), formatDate(endDate, 'YMD')])
-      isOpen.value = false
-    }
-  }
-}
-
-const handleMonthClick = (monthData: MonthData): void => {
-  if (!isMonthSelectable(displayYear.value, monthData.month)) return
-
-  const selectedMonth = new Date(displayYear.value, monthData.month, 1)
-
-  if (isSingleMode.value) {
-    // Single mode logic
-    selectedSingle.value = selectedMonth
-    emit('update:modelValue', formatDate(selectedMonth, 'YM'))
-    isOpen.value = false
-  } else {
-    // Range selection logic for months
-    if (!selectedRange.value?.start || (selectedRange.value?.start && selectedRange.value?.end)) {
-      // Start new range
-      selectedRange.value = { start: selectedMonth, end: null }
-    } else if (selectedRange.value?.start && !selectedRange.value?.end) {
-      // Complete the range - auto-swap if needed
-      const startMonth =
-        selectedMonth < selectedRange.value.start ? selectedMonth : selectedRange.value.start
-      const endMonth =
-        selectedMonth < selectedRange.value.start ? selectedRange.value.start : selectedMonth
-
-      selectedRange.value = { start: startMonth, end: endMonth }
-      emit('update:modelValue', [formatDate(startMonth, 'YM'), formatDate(endMonth, 'YM')])
       isOpen.value = false
     }
   }
@@ -818,21 +497,15 @@ const handleQuickSelection = (option: QuickSelectionOption): void => {
   const value = option.getValue()
   const startDate = new Date(value[0])
   const endDate = new Date(value[1])
-
   selectedRange.value = { start: startDate, end: endDate }
   emit('update:modelValue', value)
-
-  // Auto-close after quick selection
   isOpen.value = false
 }
 
 const getQuickSelectionClasses = (option: QuickSelectionOption): string => {
   const value = option.getValue()
   const currentValue = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
-
-  // Check if the option's value matches current selection
   const isSelected = currentValue[0] === value[0] && currentValue[1] === value[1]
-
   return isSelected
     ? 'bg-primary-700 text-white font-medium shadow-sm'
     : 'text-gray-700 hover:bg-primary-300 hover:text-primary-700'
@@ -848,14 +521,10 @@ const closePicker = (): void => {
 
 const navigate = (direction: 'previous' | 'next'): void => {
   const canNavigate = direction === 'previous' ? canNavigatePrevious.value : canNavigateNext.value
-
   if (!canNavigate) return
-
-  const yearOffset = isMonthView.value ? (direction === 'previous' ? -1 : 1) : 0
-  const monthOffset = !isMonthView.value ? (direction === 'previous' ? -1 : 1) : 0
-
+  const monthOffset = direction === 'previous' ? -1 : 1
   currentDate.value = new Date(
-    currentDate.value.getFullYear() + yearOffset,
+    currentDate.value.getFullYear(),
     currentDate.value.getMonth() + monthOffset,
     1
   )
@@ -875,37 +544,32 @@ const handleClickOutside = (event: Event): void => {
 
 const handleKeyDown = (event: KeyboardEvent): void => {
   if (!isOpen.value) return
-
   if (event.key === 'Escape') {
     event.preventDefault()
     closePicker()
   }
 }
 
-// Keep local state in sync with v-model changes from parent
 watch(
   () => props.modelValue,
   (newValue) => {
     if (isSingleMode.value) {
-      // Single mode
       if (typeof newValue === 'string' && newValue) {
-        const parsed = parseModelDate(isMonthView.value ? `${newValue}-01` : newValue)
+        const parsed = parseModelDate(newValue)
         selectedSingle.value = parsed ? startOfDay(parsed) : null
       } else {
         selectedSingle.value = null
       }
     } else {
-      // Range mode
       if (!newValue || !Array.isArray(newValue)) {
         selectedRange.value = { start: null, end: null }
         return
       }
-
       if (newValue.length >= 2) {
         const s = newValue[0]
         const e = newValue[1]
-        const sParsed = s ? parseModelDate(isMonthView.value ? `${s}-01` : s) : null
-        const eParsed = e ? parseModelDate(isMonthView.value ? `${e}-01` : e) : null
+        const sParsed = s ? parseModelDate(s) : null
+        const eParsed = e ? parseModelDate(e) : null
         selectedRange.value = {
           start: sParsed ? startOfDay(sParsed) : null,
           end: eParsed ? startOfDay(eParsed) : null,
@@ -918,7 +582,6 @@ watch(
   { immediate: true }
 )
 
-// Lifecycle
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('keydown', handleKeyDown)
