@@ -142,7 +142,7 @@
           <div class="flex justify-end border-t border-gray-100 p-1.5">
             <button
               @click="clearDateSelection"
-              class="text-primary-700 hover:bg-primary-300 bg-primary-200 cursor-pointer rounded px-3 py-1 text-sm transition-colors"
+              class="hover:bg-primary-700 bg-primary-500 cursor-pointer rounded px-3 py-1 text-sm text-white transition-colors"
             >
               Clear
             </button>
@@ -446,7 +446,7 @@ const getQuickSelectButtonClass = (option: QuickSelectOption) => {
   const currentValue = Array.isArray(props.modelValue) ? props.modelValue : [null, null]
   const [start, end] = option.getValue()
   return currentValue[0] === start && currentValue[1] === end
-    ? 'bg-primary-700 text-white font-medium shadow-sm'
+    ? 'bg-primary-500 text-white font-medium shadow-sm'
     : 'text-gray-700 hover:bg-primary-300 hover:text-primary-700'
 }
 

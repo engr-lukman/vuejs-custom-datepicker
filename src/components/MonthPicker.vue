@@ -82,7 +82,7 @@
         <div class="flex justify-end border-t border-gray-100 p-1.5">
           <button
             @click="clearSelection"
-            class="text-primary-700 hover:bg-primary-300 bg-primary-200 cursor-pointer rounded px-3 py-1 text-sm transition-colors"
+            class="hover:bg-primary-700 bg-primary-500 cursor-pointer rounded px-3 py-1 text-sm text-white transition-colors"
           >
             Clear
           </button>
