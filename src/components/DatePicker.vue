@@ -113,7 +113,7 @@
           <!-- Calendar Days -->
           <div class="p-3">
             <!-- Weekday Names -->
-            <div class="mb-2 grid grid-cols-7 gap-2">
+            <div class="mb-2 grid grid-cols-7 gap-0">
               <div
                 v-for="weekday in WEEKDAY_NAMES"
                 :key="weekday"
@@ -124,14 +124,14 @@
             </div>
 
             <!-- Days Grid -->
-            <div class="grid grid-cols-7 gap-2">
+            <div class="grid grid-cols-7 gap-y-0.5">
               <button
                 v-for="day in calendarDays"
                 :key="day.dateString"
                 :disabled="!day.isCurrentMonth || !isDateSelectable(day.date)"
                 @click="selectDate(day.date)"
                 :class="getCalendarDayClass(day)"
-                class="relative h-8 w-8 cursor-pointer rounded text-sm transition-colors"
+                class="relative h-9 w-9 cursor-pointer border-4 border-white text-sm transition-colors"
               >
                 {{ day.day }}
               </button>
@@ -414,13 +414,22 @@ const isRangeEndDate = (date: Date) =>
  * ======================== */
 const getCalendarDayClass = (day: CalendarDay): string => {
   if (!day.isCurrentMonth || !isDateSelectable(day.date)) return 'text-gray-400 cursor-not-allowed'
-  let cls = 'text-gray-900 hover:bg-primary-300'
-  if (day.isToday) cls += ' border border-primary-300'
+  let cls = 'text-gray-900'
   if (isSingleMode.value) {
-    if (isDateSelected(day.date)) cls += ' bg-primary-700 text-white'
+    if (isDateSelected(day.date)) cls += ' bg-primary-500 text-white rounded-lg !border-primary-500'
   } else {
-    if (isRangeStartDate(day.date) || isRangeEndDate(day.date)) cls += ' bg-primary-700 text-white'
-    else if (isDateSelected(day.date)) cls += ' bg-primary-300 text-white'
+    if (
+      !!selectedDateRange.value.start &&
+      isSameDate(day.date, selectedDateRange.value.start!) &&
+      !!selectedDateRange.value.end &&
+      isSameDate(day.date, selectedDateRange.value.end!)
+    )
+      cls += ' bg-primary-500 !border-primary-500 rounded-lg text-white'
+    else if (isRangeStartDate(day.date))
+      cls += ' bg-primary-500 !border-primary-500 rounded-l-lg text-white'
+    else if (isRangeEndDate(day.date))
+      cls += ' bg-primary-500 !border-primary-500 rounded-r-lg text-white'
+    else if (isDateSelected(day.date)) cls += ' bg-primary-200 !border-primary-200 text-white'
   }
   return cls
 }
