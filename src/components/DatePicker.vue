@@ -372,7 +372,7 @@ const availableQuickSelectOptions = computed<QuickSelectOption[]>(() => {
       label: 'This month',
       getValue: () => createRange(new Date(today.getFullYear(), today.getMonth(), 1)),
     },
-    { key: 'last180days', label: 'Last 6 months', getValue: () => createRange(daysAgo(179)) },
+    { key: 'last180days', label: 'Last 6 months', getValue: () => createRange(daysAgo(180)) },
   ]
 
   return options

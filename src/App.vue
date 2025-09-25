@@ -193,7 +193,7 @@ const createMonthConfig = (monthsBack: number, excludeCurrent = false) => {
 
 // Configurations
 const date30Config = createDateConfig(29) // Last 30 days
-const date180Config = createDateConfig(179) // Last 180 days
+const date180Config = createDateConfig(180) // Last 180 days
 
 const month5Config = createMonthConfig(5, true) // Last 5 months, excluding current
 const month2Config = createMonthConfig(2) // Last 2 months (including current)
