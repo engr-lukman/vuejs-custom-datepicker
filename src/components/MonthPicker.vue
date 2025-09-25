@@ -65,14 +65,14 @@
         </div>
 
         <!-- Month Grid -->
-        <div class="grid grid-cols-3 gap-2 p-3">
+        <div class="grid grid-cols-3 gap-y-0.5 p-3">
           <button
             v-for="month in monthList"
             :key="month.index"
             @click="selectMonth(month)"
             :disabled="!isMonthSelectable(displayedYear, month.index)"
             :class="getMonthButtonClasses(month)"
-            class="relative h-10 w-auto cursor-pointer rounded text-sm transition-colors"
+            class="relative h-10 w-auto cursor-pointer border-4 border-white text-sm transition-colors"
           >
             {{ month.shortName }}
           </button>
@@ -247,26 +247,32 @@ const getSelectedMonths = (): string[] => {
   return months
 }
 
-const getMonthButtonClasses = (month: MonthItem) => {
+const getMonthButtonClasses = (month: MonthItem): string => {
   if (!isMonthSelectable(displayedYear.value, month.index))
-    return 'text-gray-400 cursor-not-allowed'
+    return 'text-gray-400 !cursor-not-allowed'
+  let cls = 'text-gray-700'
 
   const selectedMonths = getSelectedMonths().map((d) => {
     const date = new Date(d)
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` // YYYY-MM
   })
-
   const [start, end] = selectedMonths
   const monthValue = month.ymValue
 
-  const isSelected = start === monthValue || end === monthValue
-  const isInRange = start && end && monthValue > start && monthValue < end
-
-  if (isSelected) return 'bg-primary-700 text-white font-medium shadow-md'
-  if (isInRange) return 'bg-primary-300 text-white border border-primary-400'
-  if (month.isCurrentMonth) return 'border border-primary-300 text-primary-800 font-medium'
-
-  return 'text-gray-700 hover:bg-primary-300'
+  if (isSingleMode.value) {
+    if (start === monthValue) cls += ' bg-primary-500 text-white rounded-lg !border-primary-500'
+  } else {
+    if (start === monthValue && end === monthValue) {
+      cls += ' bg-primary-500 !border-primary-500 rounded-lg text-white'
+    } else if (start === monthValue) {
+      cls += ' bg-primary-500 !border-primary-500 rounded-l-lg text-white'
+    } else if (end === monthValue) {
+      cls += ' bg-primary-500 !border-primary-500 rounded-r-lg text-white'
+    } else if (start && end && monthValue > start && monthValue < end) {
+      cls += ' bg-primary-200 !border-primary-200 text-white'
+    }
+  }
+  return cls
 }
 
 /** ========================
