@@ -65,7 +65,7 @@
         </div>
 
         <!-- Month Grid -->
-        <div class="grid grid-cols-3 gap-y-0.5 p-3">
+        <div class="grid grid-cols-3 gap-y-1 p-3">
           <button
             v-for="month in monthList"
             :key="month.index"

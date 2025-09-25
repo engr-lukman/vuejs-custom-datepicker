@@ -124,7 +124,7 @@
             </div>
 
             <!-- Days Grid -->
-            <div class="grid grid-cols-7 gap-y-0.5">
+            <div class="grid grid-cols-7 gap-y-1">
               <button
                 v-for="day in calendarDays"
                 :key="day.dateString"
