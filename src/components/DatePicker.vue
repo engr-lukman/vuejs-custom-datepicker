@@ -413,7 +413,7 @@ const isRangeEndDate = (date: Date) =>
  *  CSS Classes
  * ======================== */
 const getCalendarDayClass = (day: CalendarDay): string => {
-  if (!day.isCurrentMonth || !isDateSelectable(day.date)) return 'text-gray-400 cursor-not-allowed'
+  if (!day.isCurrentMonth || !isDateSelectable(day.date)) return 'text-gray-400 !cursor-not-allowed'
   let cls = 'text-gray-900'
   if (isSingleMode.value) {
     if (isDateSelected(day.date)) cls += ' bg-primary-500 text-white rounded-lg !border-primary-500'
