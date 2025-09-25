@@ -248,31 +248,40 @@ const getSelectedMonths = (): string[] => {
 }
 
 const getMonthButtonClasses = (month: MonthItem): string => {
-  if (!isMonthSelectable(displayedYear.value, month.index))
-    return 'text-gray-400 !cursor-not-allowed'
-  let cls = 'text-gray-700'
+  if (!isMonthSelectable(displayedYear.value, month.index)) {
+    return 'text-gray-400 !cursor-not-allowed bg-transparent'
+  }
 
   const selectedMonths = getSelectedMonths().map((d) => {
     const date = new Date(d)
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` // YYYY-MM
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
   })
+
   const [start, end] = selectedMonths
   const monthValue = month.ymValue
 
   if (isSingleMode.value) {
-    if (start === monthValue) cls += ' bg-primary-500 text-white rounded-lg !border-primary-500'
-  } else {
-    if (start === monthValue && end === monthValue) {
-      cls += ' bg-primary-500 !border-primary-500 rounded-lg text-white'
-    } else if (start === monthValue) {
-      cls += ' bg-primary-500 !border-primary-500 rounded-l-lg text-white'
-    } else if (end === monthValue) {
-      cls += ' bg-primary-500 !border-primary-500 rounded-r-lg text-white'
-    } else if (start && end && monthValue > start && monthValue < end) {
-      cls += ' bg-primary-200 !border-primary-200 text-white'
-    }
+    return start === monthValue
+      ? 'bg-primary-500 text-white rounded-lg !border-primary-500'
+      : 'text-gray-900'
   }
-  return cls
+
+  if (start === monthValue && end === monthValue) {
+    return 'bg-primary-500 !border-primary-500 rounded-lg text-white'
+  }
+  if (start === monthValue && !end) {
+    return 'bg-primary-500 !border-primary-500 rounded-lg text-white'
+  }
+  if (start === monthValue) {
+    return 'bg-primary-500 !border-primary-500 rounded-l-lg text-white'
+  }
+  if (end === monthValue) {
+    return 'bg-primary-500 !border-primary-500 rounded-r-lg text-white'
+  }
+  if (start && end && monthValue > start && monthValue < end) {
+    return 'bg-primary-200 !border-primary-200 text-white'
+  }
+  return 'text-gray-900'
 }
 
 /** ========================

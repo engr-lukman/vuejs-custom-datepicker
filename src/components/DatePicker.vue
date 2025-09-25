@@ -413,25 +413,33 @@ const isRangeEndDate = (date: Date) =>
  *  CSS Classes
  * ======================== */
 const getCalendarDayClass = (day: CalendarDay): string => {
-  if (!day.isCurrentMonth || !isDateSelectable(day.date)) return 'text-gray-400 !cursor-not-allowed'
-  let cls = 'text-gray-900'
-  if (isSingleMode.value) {
-    if (isDateSelected(day.date)) cls += ' bg-primary-500 text-white rounded-lg !border-primary-500'
-  } else {
-    if (
-      !!selectedDateRange.value.start &&
-      isSameDate(day.date, selectedDateRange.value.start!) &&
-      !!selectedDateRange.value.end &&
-      isSameDate(day.date, selectedDateRange.value.end!)
-    )
-      cls += ' bg-primary-500 !border-primary-500 rounded-lg text-white'
-    else if (isRangeStartDate(day.date))
-      cls += ' bg-primary-500 !border-primary-500 rounded-l-lg text-white'
-    else if (isRangeEndDate(day.date))
-      cls += ' bg-primary-500 !border-primary-500 rounded-r-lg text-white'
-    else if (isDateSelected(day.date)) cls += ' bg-primary-200 !border-primary-200 text-white'
+  if (!day.isCurrentMonth || !isDateSelectable(day.date)) {
+    return 'text-gray-400 !cursor-not-allowed bg-transparent'
   }
-  return cls
+  // Single mode
+  if (isSingleMode.value) {
+    return isDateSelected(day.date)
+      ? 'bg-primary-500 text-white rounded-lg !border-primary-500'
+      : 'text-gray-900'
+  }
+  // Range mode
+  const { start, end } = selectedDateRange.value
+  if (start && end && isSameDate(day.date, start) && isSameDate(day.date, end)) {
+    return 'bg-primary-500 !border-primary-500 rounded-lg text-white'
+  }
+  if (isRangeStartDate(day.date) && !end) {
+    return 'bg-primary-500 !border-primary-500 rounded-lg text-white'
+  }
+  if (isRangeStartDate(day.date)) {
+    return 'bg-primary-500 !border-primary-500 rounded-l-lg text-white'
+  }
+  if (isRangeEndDate(day.date)) {
+    return 'bg-primary-500 !border-primary-500 rounded-r-lg text-white'
+  }
+  if (isDateSelected(day.date)) {
+    return 'bg-primary-200 !border-primary-200 text-white'
+  }
+  return 'text-gray-900'
 }
 
 const getQuickSelectButtonClass = (option: QuickSelectOption) => {
