@@ -205,14 +205,23 @@ const formattedDisplayValue = computed(() => {
  * ======================== */
 const canNavigatePreviousYear = computed(() => {
   if (!props.minNavigation) return true
-  const minYear = new Date(props.minNavigation).getFullYear()
-  return displayedYear.value > minYear
+  const minDate = new Date(props.minNavigation)
+  // Check if there is any selectable month in the previous year
+  return (
+    displayedYear.value > minDate.getFullYear() ||
+    (displayedYear.value === minDate.getFullYear() &&
+      monthList.value.some((m) => isMonthSelectable(displayedYear.value - 1, m.index)))
+  )
 })
 
 const canNavigateNextYear = computed(() => {
   if (!props.maxNavigation) return true
-  const maxYear = new Date(props.maxNavigation).getFullYear()
-  return displayedYear.value < maxYear
+  const maxDate = new Date(props.maxNavigation)
+  return (
+    displayedYear.value < maxDate.getFullYear() ||
+    (displayedYear.value === maxDate.getFullYear() &&
+      monthList.value.some((m) => isMonthSelectable(displayedYear.value + 1, m.index)))
+  )
 })
 
 /** ========================
@@ -221,8 +230,8 @@ const canNavigateNextYear = computed(() => {
 const parseModelValue = (value?: string | null) => (value ? new Date(value) : null)
 
 const isMonthSelectable = (year: number, month: number) => {
-  const minDate = props.minNavigation ? parseModelValue(props.minNavigation) : null
-  const maxDate = props.maxNavigation ? parseModelValue(props.maxNavigation) : null
+  const minDate = props.minNavigation ? new Date(props.minNavigation) : null
+  const maxDate = props.maxNavigation ? new Date(props.maxNavigation) : null
   if (
     minDate &&
     (year < minDate.getFullYear() || (year === minDate.getFullYear() && month < minDate.getMonth()))
@@ -307,8 +316,11 @@ const navigateYear = (direction: 'previous' | 'next') => {
     (direction === 'next' && !canNavigateNextYear.value)
   )
     return
-  currentDate.value.setFullYear(
-    currentDate.value.getFullYear() + (direction === 'previous' ? -1 : 1)
+
+  currentDate.value = new Date(
+    currentDate.value.getFullYear() + (direction === 'previous' ? -1 : 1),
+    currentDate.value.getMonth(),
+    1
   )
 }
 
