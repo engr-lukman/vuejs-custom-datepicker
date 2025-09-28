@@ -494,6 +494,16 @@ const toggleDatePicker = () => {
 }
 const closeDatePicker = () => {
   isPickerOpen.value = false
+
+  if (isSingleMode.value) {
+    currentCalendarDate.value = selectedDateSingle.value
+      ? new Date(selectedDateSingle.value)
+      : new Date()
+  } else {
+    currentCalendarDate.value = selectedDateRange.value.start
+      ? new Date(selectedDateRange.value.start)
+      : new Date()
+  }
 }
 
 const navigateMonth = (direction: 'previous' | 'next') => {
