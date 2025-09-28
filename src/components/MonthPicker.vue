@@ -288,7 +288,18 @@ const getMonthButtonClasses = (month: MonthItem): string => {
  *  Picker Actions
  * ======================== */
 const togglePicker = () => (isPickerOpen.value = !isPickerOpen.value)
-const closePicker = () => (isPickerOpen.value = false)
+
+const closePicker = () => {
+  isPickerOpen.value = false
+
+  if (isSingleMode.value) {
+    currentDate.value = selectedSingleMonth.value ? new Date(selectedSingleMonth.value) : new Date()
+  } else {
+    currentDate.value = selectedMonthRange.value.start
+      ? new Date(selectedMonthRange.value.start)
+      : new Date()
+  }
+}
 
 const navigateYear = (direction: 'previous' | 'next') => {
   if (
